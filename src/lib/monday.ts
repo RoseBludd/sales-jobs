@@ -36,6 +36,18 @@ interface MondayResponse {
   };
 }
 
+// Column mapping for Monday.com board
+export const COLUMN_MAP = {
+  'text95__1': 'Current Stage',
+  'job_address___text__1': 'Job Address',
+  'jp_total__1': 'Job Total',
+  'text0__1': 'Customer First Name',
+  'text1__1': 'Customer Last Name',
+  'phone_1__1': 'Customer Phone',
+  'email4__1': 'Customer Email',
+  'text': 'Job Details',
+} as const;
+
 export async function getBoardData() {
   try {
     const query = `query {
@@ -84,35 +96,68 @@ export function extractEmailFromItem(item: MondayItem) {
 export async function getUserJobs(userEmail: string) {
   console.log('🔍 Getting jobs for user:', userEmail);
   
+  let allItems: MondayItem[] = [];
+  let nextCursor: string | null = null;
+  let hasMoreItems = true;
+  let isFirstRequest = true;
+
   try {
-    const query = `query {
-      boards(ids: [${BOARD_ID}]) {
-        name
-        items_page(query_params: {rules: [{column_id: "${EMAIL_COLUMN_ID}", compare_value: ["${userEmail}"]}], operator: and}) {
-          items {
-            id
-            name
-            column_values {
+    while (hasMoreItems) {
+      let queryParams = '';
+      
+      if (isFirstRequest) {
+        queryParams = `query_params: {rules: [{column_id: "${EMAIL_COLUMN_ID}", compare_value: ["${userEmail}"]}], operator: and}`;
+        isFirstRequest = false;
+      } else if (nextCursor) {
+        queryParams = `cursor: "${nextCursor}"`;
+      }
+
+      const query = `query {
+        boards(ids: [${BOARD_ID}]) {
+          name
+          items_page(
+            limit: 250
+            ${queryParams}
+          ) {
+            cursor
+            items {
               id
-              text
-              value
+              name
+              column_values(ids: ${JSON.stringify(Object.keys(COLUMN_MAP))}) {
+                id
+                text
+                value
+              }
             }
           }
         }
-      }
-    }`;
+      }`;
 
-    const response: MondayResponse = await monday.api(query);
-    
-    if (!response.data || !response.data.boards || !response.data.boards[0] || !response.data.boards[0].items_page || !response.data.boards[0].items_page.items) {
-      console.error('Invalid response structure:', response);
-      throw new Error('Invalid response structure from Monday.com API');
+      const response: MondayResponse = await monday.api(query);
+      
+      if (!response.data?.boards?.[0]?.items_page?.items) {
+        console.error('Invalid response structure:', response);
+        throw new Error('Invalid response structure from Monday.com API');
+      }
+
+      const items = response.data.boards[0].items_page.items;
+      allItems = [...allItems, ...items];
+      
+      // Get the next cursor
+      nextCursor = response.data.boards[0].items_page.cursor;
+      
+      // If no cursor or empty items array, we're done
+      if (!nextCursor || items.length === 0) {
+        hasMoreItems = false;
+      }
+
+      // Add a small delay to avoid rate limiting
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
 
-    const items = response.data.boards[0].items_page.items;
-    console.log(`📋 Found ${items.length} jobs for user:`, userEmail);
+    console.log(`📋 Found ${allItems.length} total jobs for user:`, userEmail);
     
-    return items.map(item => ({
+    return allItems.map(item => ({
       id: item.id,
       name: item.name,
       email: extractEmailFromItem(item),
@@ -132,7 +177,7 @@ export async function checkEmailExists(email: string) {
   try {
     const query = `query {
       boards(ids: [${BOARD_ID}]) {
-        items_page(query_params: {rules: [{column_id: "${EMAIL_COLUMN_ID}", compare_value: ["${email}"]}]}) {
+        items_page(limit: 1, query_params: {rules: [{column_id: "${EMAIL_COLUMN_ID}", compare_value: ["${email}"]}], operator: and}) {
           cursor
           items {
             id

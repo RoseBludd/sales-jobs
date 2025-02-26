@@ -6,8 +6,8 @@ import AuthProvider from '@/components/auth/AuthProvider';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Monday.com Integration',
-  description: 'Access your Monday.com board data and forms',
+  title: 'RM APP',
+  description: 'Access your job board data and forms',
 };
 
 export default function RootLayout({

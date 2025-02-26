@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { getUserJobs } from '@/lib/monday';
+import { getUserJobs, COLUMN_MAP } from '@/lib/monday';
 import Header from '@/components/Header';
 import { toast } from 'react-hot-toast';
 
@@ -15,20 +15,8 @@ interface Job {
 }
 
 // Helper function to get friendly column names
-const columnMap: Record<string, string> = {
-  // Only show required columns
-  'text95__1': 'Current Stage',
-  'job_address___text__1': 'Job Address',
-  'jp_total__1': 'Job Total',
-  'text0__1': 'Customer First Name',
-  'text1__1': 'Customer Last Name',
-  'phone_1__1': 'Customer Phone',
-  'email4__1': 'Customer Email',
-  'text': 'Job Details',
-};
-
 function getColumnPurpose(columnName: string): string {
-  return columnMap[columnName] || columnName;
+  return COLUMN_MAP[columnName as keyof typeof COLUMN_MAP] || columnName;
 }
 
 export default function DashboardPage() {
@@ -149,16 +137,14 @@ export default function DashboardPage() {
                     </button>
                   )}
                 </div>
-                {searchQuery && (
-                  <div className="mt-2 text-sm text-gray-500">
-                    Found {filteredJobs.length} {filteredJobs.length === 1 ? 'job' : 'jobs'}
-                  </div>
-                )}
               </div>
             </div>
 
-            {/* View Toggle */}
-            <div className="mt-6 flex justify-end">
+            {/* View Toggle and Job Count */}
+            <div className="mt-6 flex justify-between items-center">
+              <div className="text-sm text-gray-500">
+                Found {filteredJobs.length} {filteredJobs.length === 1 ? 'job' : 'jobs'}
+              </div>
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-1">
                 <button
                   onClick={() => setIsGridView(true)}
@@ -299,7 +285,7 @@ export default function DashboardPage() {
                     <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
                       <div className="space-y-3">
                         {Object.entries(job.details)
-                          .filter(([key]) => Object.keys(columnMap).includes(key))
+                          .filter(([key]) => Object.keys(COLUMN_MAP).includes(key))
                           .map(([key, value]) => (
                             <div key={key} className="flex justify-between items-baseline">
                               <span className="text-sm font-medium text-gray-500">{getColumnPurpose(key)}</span>
