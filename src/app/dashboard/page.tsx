@@ -19,14 +19,84 @@ function getColumnPurpose(columnName: string): string {
   return COLUMN_MAP[columnName as keyof typeof COLUMN_MAP] || columnName;
 }
 
+// Job status classification mapping
+const STATUS_CLASSIFICATIONS: Record<string, string> = {
+  'New Jobs': 'Prospects',
+  'Previous Phase - Google Export': 'Prospects',
+  'Researching/Need to call': 'Prospects',
+  'Job Lost': 'Prospects',
+  'No Damage/Keep an eye out': 'Prospects',
+  'Gone Cold': 'Prospects',
+  'Marketing - Future Sales': 'Prospects',
+  'Authorized Inspection/Lead': 'Prospects',
+  'Inspected / Schedule Close': 'Prospects',
+  'Presented With Dec. Maker/s': 'Prospects',
+  'Follow Up - Cold': 'Prospects',
+  'Follow Up - Warm': 'Prospects',
+  'Follow Up - Hot!': 'Prospects',
+  'File Review Failed': 'Prospects',
+  
+  'File Review Team 3 days': 'Sold',
+  
+  'Need cash bid': 'Estimating',
+  'Repair Bid Needed': 'Estimating',
+  'Estimating Needs Info': 'Estimating',
+  'Signed and Need Bid 10 days': 'Estimating',
+  'Est review': 'Estimating',
+  'Save the JOB!': 'Estimating',
+  'Customer with atty/PA/3P WFA': 'Estimating',
+  'Info Needed': 'Estimating',
+  'Customer with Us only': 'Estimating',
+  
+  'FAILED TAKEOFF': 'Production',
+  'ASSIGN PM - 3 DAYS': 'Production',
+  'INITIAL TAKEOFF - 3 DAYS': 'Production',
+  'REVIEW NEEDED - 3 DAYS': 'Production',
+  'CREATE CONTRACT - 3 DAYS': 'Production',
+  'CONTRACT PENDING - 10 DAYS': 'Production',
+  'NEED SITE VISIT - 10 DAYS': 'Production',
+  'CREATE MATERIALS LIST - 3 DAYS': 'Production',
+  'AWAITING QUOTES - 10 DAYS': 'Production',
+  'PM REVIEW FAILED - 1 DAY': 'Production',
+  'PM REVIEW - 2 DAYS': 'Production',
+  'PLANNING/LAYOUT - 3 DAYS': 'Production',
+  'DIRECTOR REVIEW - 2 DAYS': 'Production',
+  'SCHEDULING - 5 DAYS': 'Production',
+  'MATERIALS 30+ DAYS': 'Production',
+  'MATERIALS 30 DAYS OR LESS': 'Production',
+  'MATERIALS 10 DAYS OR LESS': 'Production',
+  'ACTIVE PROJECTS': 'Production',
+  'EMS to be scheduled': 'Production',
+  'EMS Scheduled': 'Production',
+  'Warranty Jobs 48 Hr response': 'Production',
+  'Warranty Scheduled': 'Production',
+  '3rd party to schedule': 'Production',
+  '3rd Part jobs in progress': 'Production',
+  'QC - 7 DAYS': 'Production',
+  'PUNCHOUT - 7 DAYS': 'Production',
+  'FINAL JOB REVIEW - 5 DAYS': 'Production',
+  
+  'Supp info Needed': 'Accounting',
+  'Supplement 10 Res/Com': 'Accounting',
+  'Supp Review - 3 Days': 'Accounting',
+  'File for Deprec 7 Res/Com': 'Accounting',
+  'Invoiced to collect 21Res/Com': 'Accounting',
+  '3rd party jobs to collect': 'Accounting',
+  'Paid in full - cap 7 Res/Com': 'Accounting',
+  'Paid/waiting for more funds': 'Accounting',
+  
+  'Completed': 'Completed'
+};
+
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedClassification, setSelectedClassification] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [isGridView, setIsGridView] = useState(true);
-  const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
+  const [expandedJobIds, setExpandedJobIds] = useState<string[]>([]);
   const [hasLoadedJobs, setHasLoadedJobs] = useState(false);
 
   useEffect(() => {
@@ -57,16 +127,28 @@ export default function DashboardPage() {
 
   const filteredJobs = jobs.filter((job) => {
     const searchLower = searchQuery.toLowerCase();
-    return (
-      job.name.toLowerCase().includes(searchLower) ||
+    const matchesSearch = job.name.toLowerCase().includes(searchLower) ||
       Object.values(job.details).some((value) =>
         value?.toLowerCase().includes(searchLower)
-      )
-    );
+      );
+    
+    const jobStatus = job.details['text95__1'] || '';
+    const jobClassification = STATUS_CLASSIFICATIONS[jobStatus] || '';
+    
+    if (!selectedClassification) return matchesSearch;
+    
+    if (selectedClassification === 'Unclassified') {
+      return matchesSearch && !Object.prototype.hasOwnProperty.call(STATUS_CLASSIFICATIONS, jobStatus);
+    }
+    return matchesSearch && jobClassification === selectedClassification;
   });
 
   const toggleJobExpansion = (jobId: string) => {
-    setExpandedJobId(expandedJobId === jobId ? null : jobId);
+    setExpandedJobIds(prev =>
+      prev.includes(jobId)
+        ? prev.filter(id => id !== jobId)
+        : [...prev, jobId]
+    );
   };
 
   if (status === 'loading' || isLoading) {
@@ -140,6 +222,43 @@ export default function DashboardPage() {
               </div>
             </div>
 
+            {/* Modern Classification Filter */}
+            <div className="mb-4">
+              <div className="relative group w-72">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M2.628 1.601C5.028 1.206 7.49 1 10 1s4.973.206 7.372.601a.75.75 0 01.628.74v2.288a2.25 2.25 0 01-.659 1.59l-4.682 4.683a2.25 2.25 0 00-.659 1.59v3.037c0 .684-.31 1.33-.844 1.757L9.04 18.303a1.5 1.5 0 01-2.31-1.265v-3.947a2.25 2.25 0 00-.659-1.59L1.389 6.816A2.25 2.25 0 01.73 5.227V2.34a.75.75 0 01.628-.74c2.4-.395 4.862-.601 7.372-.601zm-.496 2.315a.75.75 0 00-.122 1.18l4.879 5.326a3.75 3.75 0 011.111 2.664v3.947a.75.75 0 001.154.633l2.116-1.511a.75.75 0 00.286-.586v-3.037c0-.915.363-1.792 1.01-2.439l4.682-4.683a.75.75 0 00.22-.53V3.08a49.517 49.517 0 00-6.6-.519c-2.4 0-4.8.173-7.2.519v1.07a.75.75 0 00.22.53l4.682 4.682a3.75 3.75 0 011.111 2.664v3.037c0 .218.104.424.286.586l1.116.797a.75.75 0 001.154-.633v-3.947a3.75 3.75 0 011.111-2.664l4.879-5.326a.75.75 0 00-.122-1.18A46.115 46.115 0 0010 3.5a46.115 46.115 0 00-7.868.416z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <select
+                  value={selectedClassification}
+                  onChange={(e) => setSelectedClassification(e.target.value)}
+                  className="appearance-none block w-full bg-white rounded-xl pl-11 pr-10 py-3
+                           text-sm text-gray-900 placeholder:text-gray-400
+                           border border-gray-200 shadow-sm
+                           transition-all duration-200
+                           hover:border-gray-300 hover:shadow-md
+                           focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 focus:shadow-md
+                           focus:outline-none cursor-pointer font-medium"
+                  aria-label="Filter jobs by classification"
+                >
+                  <option value="">All Classifications</option>
+                  <option value="Prospects">Prospects</option>
+                  <option value="Sold">Sold</option>
+                  <option value="Estimating">Estimating</option>
+                  <option value="Production">Production</option>
+                  <option value="Accounting">Accounting</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Unclassified">Unclassified</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                  <svg className="h-5 w-5 text-gray-400 transition-transform duration-200 group-hover:text-gray-600" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
             {/* View Toggle and Job Count */}
             <div className="mt-6 flex justify-between items-center">
               <div className="text-sm text-gray-500">
@@ -181,11 +300,16 @@ export default function DashboardPage() {
                   <div className="p-6">
                     <h3 className="text-xl font-semibold text-gray-900 mb-4">{job.name}</h3>
                     <div className="space-y-3">
-                      {/* Job Stage and Total */}
+                      {/* Classification and Job Stage */}
                       <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-                        <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-blue-50 text-blue-700">
-                          {job.details['text95__1'] || 'No Stage'}
-                        </span>
+                        <div className="flex flex-col gap-2">
+                          <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-gray-50 text-gray-700">
+                            {STATUS_CLASSIFICATIONS[job.details['text95__1']] || 'Unclassified'}
+                          </span>
+                          <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-blue-50 text-blue-700">
+                            {job.details['text95__1'] || 'No Stage'}
+                          </span>
+                        </div>
                         <span className="text-lg font-semibold text-gray-900">
                           ${Number(job.details['jp_total__1'] || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
@@ -256,10 +380,17 @@ export default function DashboardPage() {
                     className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
                   >
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900">{job.name}</h3>
-                      <p className="text-gray-600">
-                        {job.details['text95__1'] || 'Stage not set'} • 
-                        <span className="ml-2">${Number(job.details['jp_total__1'] || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      <h3 className="text-lg text-left font-semibold text-gray-900 mb-2">{job.name}</h3>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-50 text-gray-700">
+                          {STATUS_CLASSIFICATIONS[job.details['text95__1']] || 'Unclassified'}
+                        </span>
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                          {job.details['text95__1'] || 'No Stage'}
+                        </span>
+                      </div>
+                      <p className="text-left text-gray-600">
+                        <span>${Number(job.details['jp_total__1'] || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         {job.details['job_address___text__1'] && (
                           <span className="ml-2">• {job.details['job_address___text__1']}</span>
                         )}
@@ -267,7 +398,7 @@ export default function DashboardPage() {
                     </div>
                     <svg
                       className={`h-5 w-5 text-gray-400 transform transition-transform ${
-                        expandedJobId === job.id ? 'rotate-180' : ''
+                        expandedJobIds.includes(job.id) ? 'rotate-180' : ''
                       }`}
                       viewBox="0 0 20 20"
                       fill="currentColor"
@@ -281,7 +412,7 @@ export default function DashboardPage() {
                   </button>
                   
                   {/* Expanded Details */}
-                  {expandedJobId === job.id && (
+                  {expandedJobIds.includes(job.id) && (
                     <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
                       <div className="space-y-3">
                         {Object.entries(job.details)
