@@ -144,7 +144,7 @@ export async function getUserJobs(userEmail: string) {
       allItems = [...allItems, ...items];
       
       // Get the next cursor
-      nextCursor = response.data.boards[0].items_page.cursor;
+      nextCursor = response.data.boards[0].items_page.cursor ?? null;
       
       // If no cursor or empty items array, we're done
       if (!nextCursor || items.length === 0) {
