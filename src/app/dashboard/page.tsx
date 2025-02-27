@@ -88,6 +88,15 @@ const STATUS_CLASSIFICATIONS: Record<string, string> = {
   'Completed': 'Completed'
 };
 
+// Cache configuration
+const CACHE_KEY = 'dashboard_jobs';
+const CACHE_DURATION = 1000 * 60 * 60; // 1 hour in milliseconds
+
+interface CachedData {
+  jobs: Job[];
+  timestamp: number;
+}
+
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -99,31 +108,83 @@ export default function DashboardPage() {
   const [expandedJobIds, setExpandedJobIds] = useState<string[]>([]);
   const [hasLoadedJobs, setHasLoadedJobs] = useState(false);
 
+  const fetchAndCacheJobs = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      if (!session?.user?.email) {
+        throw new Error('User email not found');
+      }
+      const fetchedJobs = await getUserJobs(session.user.email);
+      
+      // Cache the jobs with current timestamp
+      const cacheData: CachedData = {
+        jobs: fetchedJobs,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+      
+      setJobs(fetchedJobs);
+      setHasLoadedJobs(true);
+    } catch (error) {
+      console.error('Error fetching jobs:', error);
+      toast.error('Failed to fetch jobs. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [session?.user?.email]);
+
+  const loadJobsFromCache = useCallback(() => {
+    const cachedData = localStorage.getItem(CACHE_KEY);
+    if (!cachedData) return null;
+
+    try {
+      const { jobs: cachedJobs, timestamp }: CachedData = JSON.parse(cachedData);
+      const isExpired = Date.now() - timestamp > CACHE_DURATION;
+      
+      if (isExpired) {
+        localStorage.removeItem(CACHE_KEY);
+        return null;
+      }
+      
+      return cachedJobs;
+    } catch (error) {
+      console.error('Error parsing cached jobs:', error);
+      localStorage.removeItem(CACHE_KEY);
+      return null;
+    }
+  }, []);
+
+  // Function to force refresh the data
+  const refreshJobs = () => {
+    localStorage.removeItem(CACHE_KEY);
+    fetchAndCacheJobs();
+    toast.success('Refreshing jobs data...');
+  };
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/login');
+      return;
+    }
+
+    if (status === 'authenticated' && !hasLoadedJobs) {
+      const cachedJobs = loadJobsFromCache();
+      
+      if (cachedJobs) {
+        setJobs(cachedJobs);
+        setHasLoadedJobs(true);
+        setIsLoading(false);
+      } else {
+        fetchAndCacheJobs();
+      }
+    }
+  }, [status, router, hasLoadedJobs, fetchAndCacheJobs, loadJobsFromCache]);
+
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/login');
     }
   }, [status, router]);
-
-  const loadJobs = useCallback(async () => {
-    if (!session?.user?.email || hasLoadedJobs) return;
-
-    try {
-      setIsLoading(true);
-      const userJobs = await getUserJobs(session.user.email);
-      setJobs(userJobs);
-      setHasLoadedJobs(true);
-    } catch (error) {
-      console.error('Error loading jobs:', error);
-      toast.error('Failed to load jobs');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [session?.user?.email, hasLoadedJobs]);
-
-  useEffect(() => {
-    loadJobs();
-  }, [loadJobs]);
 
   const filteredJobs = jobs.filter((job) => {
     const searchLower = searchQuery.toLowerCase();
@@ -253,10 +314,31 @@ export default function DashboardPage() {
                 </select>
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
                   <svg className="h-5 w-5 text-gray-400 transition-transform duration-200 group-hover:text-gray-600" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                    <path
+                      fillRule="evenodd"
+                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 </div>
               </div>
+            </div>
+
+            {/* Refresh Button */}
+            <div className="flex justify-end mb-4">
+              <button
+                onClick={refreshJobs}
+                className="flex items-center gap-2 px-4 py-3 text-sm font-medium text-gray-700 bg-white rounded-xl
+                         border border-gray-200 shadow-sm hover:bg-gray-50 hover:border-gray-300
+                         transition-all duration-200 hover:shadow-md focus:outline-none
+                         focus:ring-4 focus:ring-blue-500/10"
+              >
+                <svg className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Refresh Jobs
+              </button>
             </div>
 
             {/* View Toggle and Job Count */}

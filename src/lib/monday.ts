@@ -1,11 +1,30 @@
 import mondaySdk from 'monday-sdk-js';
+import fetch from 'node-fetch';
+
+const MONDAY_API_KEY = process.env.MONDAY_API_KEY;
 
 console.log('🚀 Initializing Monday.com SDK');
 const monday = mondaySdk();
 
-const MONDAY_API_KEY = process.env.MONDAY_API_KEY;
-const BOARD_ID = process.env.MONDAY_BOARD_ID || "6727219152";
-const EMAIL_COLUMN_ID = "email5__1";
+// Configure node-fetch for server-side API calls
+const serverApi = async (query: string) => {
+  const response = await fetch('https://api.monday.com/v2', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': MONDAY_API_KEY || ''
+    },
+    body: JSON.stringify({ query })
+  });
+  
+  const result = await response.json();
+  return result;
+};
+const BOARD_ID_USERS = process.env.MONDAY_BOARD_ID_USERS || "5764059860";
+const BOARD_ID_DATA = process.env.MONDAY_BOARD_ID_DATA || "6727219152";
+const EMAIL_COLUMN_ID = "email7";
+const EMAIL_COLUMN_ID_DATA = "email5__1";
+const PASSWORD_COLUMN_ID = "text_mknhvpkq";
 
 if (!MONDAY_API_KEY) {
   throw new Error('Monday.com API key not found in environment variables');
@@ -30,10 +49,15 @@ interface MondayResponse {
       name: string;
       items_page: {
         items: MondayItem[];
-        cursor?: string;
+        cursor: string | null;
       };
     }>;
   };
+}
+
+interface ChangePasswordResult {
+  success: boolean;
+  error?: string;
 }
 
 // Column mapping for Monday.com board
@@ -47,46 +71,6 @@ export const COLUMN_MAP = {
   'email4__1': 'Customer Email',
   'text': 'Job Details',
 } as const;
-
-export async function getBoardData() {
-  try {
-    const query = `query {
-      boards(ids: [${BOARD_ID}]) {
-        name
-        items_page {
-          items {
-            id
-            name
-            column_values {
-              id
-              text
-              value
-            }
-          }
-        }
-      }
-    }`;
-
-    console.log('🔄 Fetching data from Monday.com board:', BOARD_ID);
-    const response: MondayResponse = await monday.api(query);
-    
-    if (!response.data || !response.data.boards || !response.data.boards[0] || !response.data.boards[0].items_page || !response.data.boards[0].items_page.items) {
-      console.error('Invalid response structure:', response);
-      throw new Error('Invalid response structure from Monday.com API');
-    }
-
-    const items = response.data.boards[0].items_page.items;
-    console.log('✅ Successfully fetched Monday.com data:', {
-      itemCount: items.length,
-      boardName: response.data.boards[0].name
-    });
-    
-    return items;
-  } catch (error) {
-    console.error('Error fetching Monday.com data:', error);
-    throw error;
-  }
-}
 
 export function extractEmailFromItem(item: MondayItem) {
   const emailColumn = item.column_values.find(col => col.id === EMAIL_COLUMN_ID);
@@ -106,14 +90,14 @@ export async function getUserJobs(userEmail: string) {
       let queryParams = '';
       
       if (isFirstRequest) {
-        queryParams = `query_params: {rules: [{column_id: "${EMAIL_COLUMN_ID}", compare_value: ["${userEmail}"]}], operator: and}`;
+        queryParams = `query_params: {rules: [{column_id: "${EMAIL_COLUMN_ID_DATA}", compare_value: ["${userEmail}"]}], operator: and}`;
         isFirstRequest = false;
       } else if (nextCursor) {
         queryParams = `cursor: "${nextCursor}"`;
       }
 
       const query = `query {
-        boards(ids: [${BOARD_ID}]) {
+        boards(ids: [${BOARD_ID_DATA}]) {
           name
           items_page(
             limit: 250
@@ -171,37 +155,185 @@ export async function getUserJobs(userEmail: string) {
     throw error;
   }
 }
-
-export async function checkEmailExists(email: string) {
+export async function checkEmailExists(email: string): Promise<boolean> {
   console.log('Checking email existence for:', email);
   try {
     const query = `query {
-      boards(ids: [${BOARD_ID}]) {
-        items_page(limit: 1, query_params: {rules: [{column_id: "${EMAIL_COLUMN_ID}", compare_value: ["${email}"]}], operator: and}) {
-          cursor
+      boards(ids: [${BOARD_ID_USERS}]) {
+        items_page(
+          limit: 1,
+          query_params: {
+            rules: [{column_id: "${EMAIL_COLUMN_ID}", compare_value: ["${email}"]}],
+            operator: and
+          }
+        ) {
           items {
             id
+            column_values(ids: ["${PASSWORD_COLUMN_ID}"]) {
+              text
+            }
           }
         }
       }
     }`;
 
     const response: MondayResponse = await monday.api(query);
-    // console.log('Raw response:', JSON.stringify(response, null, 2));
-    // console.log('Items:', response?.data?.boards?.[0]?.items_page?.items);
-    // console.log('Items length:', response?.data?.boards?.[0]?.items_page?.items?.length);
     
-    const exists = response.data && 
-                  response.data.boards && 
-                  response.data.boards[0] && 
-                  response.data.boards[0].items_page && 
-                  response.data.boards[0].items_page.items && 
-                  response.data.boards[0].items_page.items.length > 0;
-    console.log('Email exists?', exists);
-    return exists;
+    const item = response.data?.boards?.[0]?.items_page?.items?.[0];
+    return Boolean(item);
   } catch (error) {
     console.error('Error checking email existence:', error);
     throw error;
+  }
+}
+export async function checkCredentials(email: string, password: string): Promise<boolean> {
+  console.log('Checking credentials for:', email);
+  try {
+    // First query to get the user and their current password
+    const query = `query {
+      boards(ids: [${BOARD_ID_USERS}]) {
+        items_page(
+          limit: 1,
+          query_params: {
+            rules: [{column_id: "${EMAIL_COLUMN_ID}", compare_value: ["${email}"]}],
+            operator: and
+          }
+        ) {
+          items {
+            id
+            column_values(ids: ["${PASSWORD_COLUMN_ID}"]) {
+              text
+            }
+          }
+        }
+      }
+    }`;
+
+    // Use serverApi for server-side calls (NextAuth) or monday.api for client-side calls
+    const isServer = typeof window === 'undefined';
+    const api = isServer ? serverApi : monday.api;
+    const response: MondayResponse = await api(query);
+
+    const item = response.data?.boards?.[0]?.items_page?.items?.[0];
+    if (!item) {
+      return false;
+    }
+
+    const storedPassword = item.column_values[0].text;
+
+    // First time login case: if database password is empty AND input is "RESTORE"
+    if (!storedPassword && password === "RESTORE") {
+      const mutation = `mutation {
+        change_simple_column_value(
+          board_id: ${BOARD_ID_USERS},
+          item_id: ${item.id},
+          column_id: "${PASSWORD_COLUMN_ID}",
+          value: ${formatColumnValue("RESTORE")}
+        ) {
+          id
+        }
+      }`;
+
+      await api(mutation);
+      return true;
+    }
+
+    // Normal login case: verify password matches stored password
+    return storedPassword === password;
+  } catch (error) {
+    console.error('Error checking credentials:', error);
+    throw error;
+  }
+}
+
+// Helper function to format column values according to Monday.com's requirements
+function formatColumnValue(value: string | null): string {
+  if (value === null) {
+    return '""'; // Empty string for text columns
+  }
+  return JSON.stringify(value);
+}
+
+export async function changePassword(email: string, currentPassword: string, newPassword: string): Promise<ChangePasswordResult> {
+  try {
+    const isServer = typeof window === 'undefined';
+    const api = isServer ? serverApi : monday.api;
+
+    // Get user and verify current password
+    const query = `query {
+      boards(ids: [${BOARD_ID_USERS}]) {
+        items_page(
+          limit: 500,
+          query_params: {
+            rules: [{column_id: "${EMAIL_COLUMN_ID}", compare_value: ["${email}"]}],
+            operator: and
+          }
+        ) {
+          items {
+            id
+            column_values(ids: ["${PASSWORD_COLUMN_ID}"]) {
+              text
+            }
+          }
+        }
+      }
+    }`;
+
+    const response: MondayResponse = await api(query);
+    const item = response.data?.boards?.[0]?.items_page?.items?.[0];
+
+    if (!item) {
+      return { success: false, error: 'User not found' };
+    }
+
+    // Verify current password matches exactly
+    const storedPassword = item.column_values[0].text;
+    if (storedPassword !== currentPassword) {
+      return { success: false, error: 'Current password is incorrect' };
+    }
+
+    // Update to new password using change_simple_column_value for text columns
+    const mutation = `mutation {
+      change_simple_column_value(
+        board_id: ${BOARD_ID_USERS},
+        item_id: ${item.id},
+        column_id: "${PASSWORD_COLUMN_ID}",
+        value: ${formatColumnValue(newPassword)}
+      ) {
+        id
+      }
+    }`;
+
+    await api(mutation);
+    return { success: true };
+  } catch (error) {
+    console.error('Error changing password:', error);
+    return { success: false, error: 'An error occurred while changing password' };
+  }
+}
+
+// Helper function to clear a column value
+export async function clearColumnValue(boardId: string, itemId: string, columnId: string): Promise<boolean> {
+  try {
+    const isServer = typeof window === 'undefined';
+    const api = isServer ? serverApi : monday.api;
+    
+    const mutation = `mutation {
+      change_simple_column_value(
+        board_id: ${boardId},
+        item_id: ${itemId},
+        column_id: "${columnId}",
+        value: ""
+      ) {
+        id
+      }
+    }`;
+
+    await api(mutation);
+    return true;
+  } catch (error) {
+    console.error('Error clearing column value:', error);
+    return false;
   }
 }
 

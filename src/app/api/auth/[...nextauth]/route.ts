@@ -7,18 +7,31 @@ const handler = NextAuth({
       name: 'Credentials',
       credentials: {
         email: { label: 'Email', type: 'email', placeholder: 'Enter your email' },
+        password: { label: 'Password', type: 'password', placeholder: 'Enter your password' },
       },
       async authorize(credentials) {
-        if (!credentials?.email) {
-          throw new Error('Email is required');
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error('Email and password are required');
         }
 
-        // Return a user object
-        return {
-          id: '1',
-          email: credentials.email,
-          name: credentials.email.split('@')[0],
-        };
+        try {
+          // Check credentials against Monday.com
+          const { checkCredentials } = await import('@/lib/monday');
+          const isValid = await checkCredentials(credentials.email, credentials.password);
+
+          if (!isValid) {
+            return null;
+          }
+
+          return {
+            id: '1',
+            email: credentials.email,
+            name: credentials.email.split('@')[0],
+          };
+        } catch (error) {
+          console.error('Authorization error:', error);
+          return null;
+        }
       },
     }),
   ],
