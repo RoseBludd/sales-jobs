@@ -41,3 +41,7 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+
+/sync-scripts/cache
+/sync-scripts/__pycache__
+/sync-scripts/logs
