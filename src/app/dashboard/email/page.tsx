@@ -1,214 +1,444 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Star, Search, ArrowLeft } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { ChevronLeft, ChevronRight, AlertCircle, Loader2 } from 'lucide-react';
+import { Email } from './types';
+import { useEmailContext } from './context/EmailProvider';
 
-interface EmailAttachment {
-  id: string;
-  name: string;
-  size: number;
-  type: string;
+// Import components
+import EmailListItem from './components/EmailListItem';
+import EmailDetail from './components/EmailDetail';
+import ComposeEmail from './components/ComposeEmail';
+import SearchBar from './components/SearchBar';
+
+interface EmailPageProps {
+  currentFolder: 'inbox' | 'sent' | 'draft' | 'trash';
 }
 
-interface Email {
-  id: number;
-  folder: 'inbox' | 'sent' | 'draft' | 'trash';
-  from: string;
-  fromName: string;
-  to: string;
-  subject: string;
-  body: string;
-  date: Date;
-  isRead: boolean;
-  isStarred: boolean;
-  attachments?: EmailAttachment[];
-}
-
-const mockEmails: Email[] = [
-  {
-    id: 1,
-    folder: 'inbox',
-    from: 'john.smith@example.com',
-    fromName: 'John Smith',
-    to: 'me@company.com',
-    subject: 'Project Update - Q1 Status',
-    body: 'Hi team,\n\nI wanted to share the latest progress on our Q1 objectives...\n\nLet me know if you have any questions!\n\nBest,\nJohn',
-    date: new Date(2025, 2, 1, 9, 15),
-    isRead: true,
-    isStarred: false
-  },
-  {
-    id: 2,
-    folder: 'inbox',
-    from: 'sarah.jones@example.com',
-    fromName: 'Sarah Jones',
-    to: 'me@company.com',
-    subject: 'Client Meeting Tomorrow',
-    body: 'Hi,\n\nJust a reminder that we have the client presentation tomorrow at 2PM EST. Please review the slides I shared yesterday and let me know if you have any feedback.\n\nThanks,\nSarah',
-    date: new Date(2025, 2, 3, 15, 22),
-    isRead: false,
-    isStarred: true
-  },
-  {
-    id: 3,
-    folder: 'inbox',
-    from: 'tech.support@company.com',
-    fromName: 'IT Support',
-    to: 'me@company.com',
-    subject: 'System Maintenance Notice',
-    body: 'Dear Team,\n\nPlease be informed that we will be performing system maintenance this weekend.\n\nBest regards,\nIT Support Team',
-    date: new Date(2025, 2, 2, 11, 5),
-    isRead: true,
-    isStarred: false
-  }
-];
-
-const SearchBar = ({ onSearch }: { onSearch: (query: string) => void }) => (
-  <div className="relative">
-    <input
-      type="text"
-      placeholder="Search emails..."
-      onChange={(e) => onSearch(e.target.value)}
-      className="w-full p-2 pl-10 border rounded-lg bg-white dark:bg-gray-800 
-                dark:border-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-      aria-label="Search emails"
-    />
-    <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
-  </div>
-);
-
-const EmailListItem = ({ email, onClick }: { email: Email; onClick: () => void }) => (
-  <button
-    onClick={onClick}
-    className={`w-full p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors
-      ${!email.isRead ? 'bg-blue-50 dark:bg-blue-900/20' : ''}
-      border-b border-gray-100 dark:border-gray-800`}
-  >
-    <div className="flex items-start">
-      <button 
-        className="flex-shrink-0 mr-3 hover:text-yellow-500 transition-colors"
-        onClick={(e) => {
-          e.stopPropagation();
-          // Handle star toggle
-        }}
-        aria-label={email.isStarred ? "Unstar email" : "Star email"}
-      >
-        <Star
-          size={18}
-          className={email.isStarred ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}
-        />
-      </button>
-      
-      <div className="flex-grow min-w-0">
-        <div className="flex justify-between items-center mb-1">
-          <span className={`font-medium truncate ${!email.isRead ? 'font-semibold' : ''}`}>
-            {email.fromName}
-          </span>
-          <time className="text-sm text-gray-500 flex-shrink-0 ml-2">
-            {email.date.toLocaleDateString([], { month: 'short', day: 'numeric' })}
-          </time>
-        </div>
-        
-        <h3 className="text-sm font-medium truncate mb-1">
-          {email.subject}
-        </h3>
-        
-        <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
-          {email.body.split('\n')[0]}
-        </p>
-      </div>
-    </div>
-  </button>
-);
-
-const EmailDetail = ({ email, onBack }: { email: Email; onBack: () => void }) => (
-  <article className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-gray-800">
-    <header className="p-4 border-b dark:border-gray-700 flex items-center">
-      <button 
-        className="mr-4 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
-        onClick={onBack}
-        aria-label="Back to email list"
-      >
-        <ArrowLeft size={20} />
-      </button>
-      <div className="flex-1">
-        <h1 className="text-2xl font-bold mb-2">{email.subject}</h1>
-        <div className="flex justify-between items-baseline">
-          <div className="flex items-center">
-            <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center mr-3">
-              {email.fromName.charAt(0)}
-            </div>
-            <div>
-              <div className="font-medium">
-                {email.fromName} &lt;{email.from}&gt;
-              </div>
-              <div className="text-sm text-gray-500">
-                To: {email.to}
-              </div>
-            </div>
-          </div>
-          <time className="text-sm text-gray-500">
-            {email.date.toLocaleString()}
-          </time>
-        </div>
-      </div>
-    </header>
-    
-    <div className="flex-1 overflow-y-auto p-6">
-      <div className="prose dark:prose-invert max-w-none">
-        {email.body.split('\n').map((paragraph, index) => (
-          <p key={index}>{paragraph}</p>
-        ))}
-      </div>
-    </div>
-  </article>
-);
-
-export default function EmailPage() {
-  const [emails] = useState<Email[]>(mockEmails);
+export default function EmailPage({ currentFolder }: EmailPageProps) {
+  const router = useRouter();
+  
+  // Use the shared context
+  const { 
+    emails,
+    showCompose, 
+    setShowCompose, 
+    setIsLoading 
+  } = useEmailContext();
+  
+  const [filteredEmails, setFilteredEmails] = useState<Email[]>([]);
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalEmails, setTotalEmails] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [initialLoad, setInitialLoad] = useState(true);
 
-  const filteredEmails = emails.filter(email => 
-    email.folder === 'inbox' &&
-    (email.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-     email.body.toLowerCase().includes(searchQuery.toLowerCase()) ||
-     email.fromName.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  // Fetch emails when currentFolder changes
+  useEffect(() => {
+    console.log(`Fetching emails for folder: ${currentFolder}`);
+    fetchEmails(1);
+  }, [currentFolder]);
+  
+  // Apply search filter when query changes
+  useEffect(() => {
+    if (!searchQuery) {
+      setFilteredEmails(emails);
+      return;
+    }
+    
+    const lowerQuery = searchQuery.toLowerCase();
+    const filtered = emails.filter(email => 
+      email.subject.toLowerCase().includes(lowerQuery) ||
+      email.fromName.toLowerCase().includes(lowerQuery) ||
+      email.body.toLowerCase().includes(lowerQuery)
+    );
+    
+    setFilteredEmails(filtered);
+  }, [searchQuery, emails]);
+  
+  const fetchEmails = async (page = 1) => {
+    try {
+      setLoading(true);
+      setIsLoading(true);
+      setError('');
+      
+      // Convert folder name to match API expectations
+      const apiFolder = currentFolder.toUpperCase();
+      
+      // Make API call to fetch emails
+      const response = await fetch(`/api/email?folder=${apiFolder}&page=${page}&limit=10`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch emails');
+      }
+      
+      const data = await response.json();
+      
+      // Transform API response to match our Email interface
+      const transformedEmails: Email[] = data.emails.map((emailData: { 
+        id: number;
+        from: string;
+        fromName?: string;
+        to: string;
+        subject?: string;
+        body?: string;
+        date: string;
+        isRead: boolean;
+        isStarred?: boolean;
+        itemId?: string;
+        attachments?: Array<{
+          id: string;
+          name: string;
+          size: number;
+          type: string;
+        }>;
+      }) => ({
+        id: emailData.id,
+        folder: currentFolder,
+        from: emailData.from,
+        fromName: emailData.fromName || emailData.from.split('@')[0],
+        to: emailData.to,
+        subject: emailData.subject || '(No Subject)',
+        body: emailData.body || '',
+        date: new Date(emailData.date),
+        isRead: emailData.isRead,
+        isStarred: emailData.isStarred || false,
+        itemId: emailData.itemId,
+        attachments: emailData.attachments || []
+      }));
+      
+      // Dispatch event to update context
+      const event = new CustomEvent('emailsUpdated', {
+        detail: { emails: transformedEmails }
+      });
+      window.dispatchEvent(event);
+      
+      setFilteredEmails(transformedEmails);
+      setTotalPages(data.totalPages || 1);
+      setTotalEmails(data.total || 0);
+      setCurrentPage(page);
+      
+    } catch (err) {
+      console.error('Error fetching emails:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load emails. Please try again later.');
+      
+      // Dispatch event to update context even on error
+      const event = new CustomEvent('emailsUpdated', {
+        detail: { emails: [] }
+      });
+      window.dispatchEvent(event);
+    } finally {
+      setLoading(false);
+      setIsLoading(false);
+      setInitialLoad(false);
+    }
+  };
+  
+  const handlePageChange = (newPage: number) => {
+    if (newPage < 1 || newPage > totalPages) return;
+    fetchEmails(newPage);
+  };
+  
+  const handleEmailSelect = async (email: Email) => {
+    try {
+      setSelectedEmail(email);
+      
+      // If email is not read, mark it as read
+      if (!email.isRead && email.itemId) {
+        const response = await fetch('/api/email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'markAsRead',
+            itemId: email.itemId
+          }),
+        });
+        
+        if (response.ok) {
+          // Update filtered emails
+          setFilteredEmails(prevEmails => 
+            prevEmails.map(e => e.id === email.id ? { ...e, isRead: true } : e)
+          );
+          
+          // Update the selected email
+          setSelectedEmail({ ...email, isRead: true });
+          
+          // Dispatch event to update emails in context
+          const updatedEmails = emails.map(e => 
+            e.id === email.id ? { ...e, isRead: true } : e
+          );
+          
+          const event = new CustomEvent('emailsUpdated', {
+            detail: { emails: updatedEmails }
+          });
+          window.dispatchEvent(event);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching email details:', err);
+      setError('Failed to load email details. Please try again later.');
+    }
+  };
+  
+  const handleDeleteEmail = async (email: Email) => {
+    try {
+      if (!email.itemId) {
+        throw new Error('Email ID is missing');
+      }
+      
+      const response = await fetch('/api/email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'delete',
+          itemId: email.itemId
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete email');
+      }
+      
+      // Update filtered emails
+      setFilteredEmails(prevEmails => 
+        prevEmails.filter(e => e.id !== email.id)
+      );
+      
+      if (selectedEmail?.id === email.id) {
+        setSelectedEmail(null);
+      }
+      
+      // Dispatch event to update emails in context
+      const updatedEmails = emails.filter(e => e.id !== email.id);
+      
+      const event = new CustomEvent('emailsUpdated', {
+        detail: { emails: updatedEmails }
+      });
+      window.dispatchEvent(event);
+      
+    } catch (err) {
+      console.error('Error deleting email:', err);
+      setError(err instanceof Error ? err.message : 'Failed to delete email. Please try again later.');
+    }
+  };
+  
+  const handleMoveEmail = async (email: Email, toFolder: 'inbox' | 'sent' | 'draft' | 'trash') => {
+    try {
+      if (!email.itemId) {
+        throw new Error('Email ID is missing');
+      }
+      
+      const response = await fetch('/api/email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'move',
+          itemId: email.itemId,
+          fromFolder: currentFolder.toUpperCase(),
+          toFolder: toFolder.toUpperCase()
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to move email');
+      }
+      
+      // Update filtered emails
+      setFilteredEmails(prevEmails => 
+        prevEmails.filter(e => e.id !== email.id)
+      );
+      
+      if (selectedEmail?.id === email.id) {
+        setSelectedEmail(null);
+      }
+      
+      // Navigate to the target folder
+      router.push(`/dashboard/email/${toFolder}`);
+      
+      // Dispatch event to update emails in context
+      const updatedEmails = emails.filter(e => e.id !== email.id);
+      
+      const event = new CustomEvent('emailsUpdated', {
+        detail: { emails: updatedEmails }
+      });
+      window.dispatchEvent(event);
+      
+    } catch (err) {
+      console.error('Error moving email:', err);
+      setError(err instanceof Error ? err.message : 'Failed to move email. Please try again later.');
+    }
+  };
+  
+  const handleSendEmail = async (to: string, subject: string, body: string): Promise<boolean> => {
+    try {
+      setIsSubmitting(true);
+      
+      const response = await fetch('/api/email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'send',
+          to,
+          subject,
+          body
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to send email');
+      }
+      
+      // If successful, refresh the sent folder if we're in it
+      if (currentFolder === 'sent') {
+        fetchEmails(currentPage);
+      }
+      
+      return true;
+    } catch (err) {
+      console.error('Error sending email:', err);
+      setError(err instanceof Error ? err.message : 'Failed to send email. Please try again later.');
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+  };
+  
+  const handleRetry = () => {
+    fetchEmails(currentPage);
+  };
 
+  if (initialLoad) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 size={40} className="animate-spin mx-auto mb-4 text-blue-500" />
+          <p className="text-gray-600 dark:text-gray-400">Loading your emails...</p>
+        </div>
+      </div>
+    );
+  }
+  
   return (
-    <div className="p-6 h-full">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700 h-[calc(100vh-12rem)]">
-        {!selectedEmail ? (
-          <div className="flex flex-col h-full">
-            <div className="p-4 border-b dark:border-gray-700">
-              <SearchBar onSearch={setSearchQuery} />
+    <div className="h-full flex flex-col">
+      {/* Current folder and search */}
+      <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+        <div className="flex items-center">
+          <h1 className="text-xl font-semibold capitalize">{currentFolder}</h1>
+          <p className="ml-2 text-sm text-gray-500">
+            {loading ? 'Loading...' : `${totalEmails} emails`}
+          </p>
+        </div>
+        <SearchBar onSearch={handleSearch} />
+      </div>
+      
+      {/* Email content area */}
+      <div className="flex-1 overflow-hidden flex">
+        {/* Email list */}
+        <div className={`${selectedEmail ? 'hidden md:block md:w-1/3 lg:w-2/5' : 'w-full'} h-full overflow-y-auto border-r border-gray-200`}>
+          {error && (
+            <div className="p-4 bg-red-100 text-red-800 flex items-center">
+              <AlertCircle size={18} className="mr-2" />
+              <p>{error}</p>
+              <button 
+                className="ml-auto text-sm text-blue-600 hover:underline"
+                onClick={handleRetry}
+              >
+                Retry
+              </button>
             </div>
-            <div className="flex-1 overflow-y-auto">
-              {filteredEmails.length === 0 ? (
-                <div className="flex justify-center items-center h-full text-gray-500">
-                  <p>No emails found</p>
-                </div>
-              ) : (
-                <div className="divide-y dark:divide-gray-700">
-                  {filteredEmails.map(email => (
-                    <EmailListItem
-                      key={email.id}
-                      email={email}
-                      onClick={() => setSelectedEmail(email)}
-                    />
-                  ))}
-                </div>
-              )}
+          )}
+          
+          {loading && (
+            <div className="flex items-center justify-center h-32">
+              <Loader2 size={24} className="animate-spin text-blue-500" />
             </div>
+          )}
+          
+          {!loading && filteredEmails.length === 0 && !error ? (
+            <div className="p-8 text-center text-gray-500">
+              <p>No emails found in this folder.</p>
+            </div>
+          ) : (
+            <ul>
+              {filteredEmails.map(email => (
+                <EmailListItem 
+                  key={email.id} 
+                  email={email} 
+                  isSelected={selectedEmail?.id === email.id}
+                  onClick={() => handleEmailSelect(email)}
+                  onDelete={() => handleDeleteEmail(email)}
+                  onMove={(toFolder) => handleMoveEmail(email, toFolder)}
+                />
+              ))}
+            </ul>
+          )}
+          
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="p-4 border-t border-gray-200 flex items-center justify-between">
+              <button 
+                className="p-2 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1 || loading}
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <span>
+                Page {currentPage} of {totalPages}
+              </span>
+              <button 
+                className="p-2 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages || loading}
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          )}
+        </div>
+        
+        {/* Email detail view */}
+        {selectedEmail && (
+          <div className="w-full md:w-2/3 lg:w-3/5 h-full overflow-y-auto">
+            <EmailDetail 
+              email={selectedEmail}
+              onBack={() => setSelectedEmail(null)}
+              onDelete={() => handleDeleteEmail(selectedEmail)}
+              onMove={(toFolder) => handleMoveEmail(selectedEmail, toFolder)}
+            />
           </div>
-        ) : (
-          <EmailDetail
-            email={selectedEmail}
-            onBack={() => setSelectedEmail(null)}
-          />
         )}
       </div>
+      
+      {/* Compose email modal */}
+      {showCompose && (
+        <ComposeEmail 
+          onClose={() => setShowCompose(false)}
+          onSend={handleSendEmail}
+          isSubmitting={isSubmitting}
+        />
+      )}
     </div>
   );
 }

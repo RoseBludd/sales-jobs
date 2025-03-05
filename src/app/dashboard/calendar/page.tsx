@@ -1,15 +1,30 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useSession } from 'next-auth/react';
 
 interface CalendarEvent {
-  id: number;
-  title: string;
-  start: Date;
-  end: Date;
-  description: string;
+  Id: string;
+  Subject: string;
+  Start: string;
+  End: string;
+  Description?: string;
+  Location?: string;
 }
+
+const fetchCalendarEvents = async () => {
+  try {
+    const response = await fetch('/api/calendar');
+    if (!response.ok) {
+      throw new Error('Failed to fetch calendar events');
+    }
+    return response.json();
+  } catch (error) {
+    console.error('Error fetching calendar events:', error);
+    return [];
+  }
+};
 
 type ViewType = 'month' | 'week' | 'day';
 
@@ -37,29 +52,6 @@ const useDateHelpers = () => {
   return { daysInMonth, firstDayOfMonth, getMonthName, formatTime };
 };
 
-const mockEvents: CalendarEvent[] = [
-  {
-    id: 1,
-    title: 'Team Meeting',
-    start: new Date(2025, 2, 15, 10, 0),
-    end: new Date(2025, 2, 15, 11, 0),
-    description: 'Weekly team sync'
-  },
-  {
-    id: 2,
-    title: 'Client Call',
-    start: new Date(2025, 2, 16, 14, 0),
-    end: new Date(2025, 2, 16, 15, 0),
-    description: 'Project status update'
-  },
-  {
-    id: 3,
-    title: 'Deployment Review',
-    start: new Date(2025, 2, 18, 13, 0),
-    end: new Date(2025, 2, 18, 14, 30),
-    description: 'Reviewing latest deployment'
-  }
-];
 
 interface ViewToggleProps {
   activeView: ViewType;
@@ -145,9 +137,10 @@ const MonthView = ({ currentDate, events }: MonthViewProps) => {
   
   const getEventsForDay = (day: number): CalendarEvent[] => {
     return events.filter(event => {
-      return event.start.getDate() === day && 
-             event.start.getMonth() === currentDate.getMonth() && 
-             event.start.getFullYear() === currentDate.getFullYear();
+      const eventDate = new Date(event.Start);
+      return eventDate.getDate() === day &&
+             eventDate.getMonth() === currentDate.getMonth() &&
+             eventDate.getFullYear() === currentDate.getFullYear();
     });
   };
 
@@ -192,11 +185,11 @@ const MonthView = ({ currentDate, events }: MonthViewProps) => {
               <div className="space-y-1 overflow-y-auto max-h-24">
                 {dayEvents.map(event => (
                   <div
-                    key={event.id}
+                    key={event.Id}
                     className="p-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded truncate cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
-                    title={`${event.title}\n${event.description}`}
+                    title={`${event.Subject}\n${event.Description || ''}`}
                   >
-                    {formatTime(event.start)} - {event.title}
+                    {formatTime(new Date(event.Start))} - {event.Subject}
                   </div>
                 ))}
               </div>
@@ -227,9 +220,38 @@ const DayView = () => (
 );
 
 export default function CalendarPage() {
+  const { status } = useSession();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [activeView, setActiveView] = useState<ViewType>('month');
-  const [events] = useState<CalendarEvent[]>(mockEvents);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadEvents = async () => {
+      try {
+        const data = await fetchCalendarEvents();
+        if (isMounted) {
+          setEvents(data);
+          setError(null);
+        }
+      } catch (error) {
+        if (isMounted) {
+          console.error('Failed to load calendar events:', error);
+          setError('Failed to load calendar events. Please try again later.');
+        }
+      }
+    };
+
+    if (status === 'authenticated') {
+      loadEvents();
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [status, currentDate]);
 
   const handlePrevMonth = () => {
     setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1));
@@ -238,6 +260,30 @@ export default function CalendarPage() {
   const handleNextMonth = () => {
     setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1));
   };
+
+  if (status === 'loading') {
+    return (
+      <div className="p-6 text-center">
+        <p className="text-gray-500 dark:text-gray-400">Loading calendar...</p>
+      </div>
+    );
+  }
+
+  if (status === 'unauthenticated') {
+    return (
+      <div className="p-6 text-center">
+        <p className="text-gray-500 dark:text-gray-400">Please sign in to view your calendar</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 text-center">
+        <p className="text-red-500 dark:text-red-400">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 h-full">

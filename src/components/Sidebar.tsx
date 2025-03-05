@@ -42,7 +42,7 @@ const useTheme = () => {
 const NAV_ITEMS: NavItem[] = [
   { href: '/dashboard', icon: Home, label: 'Home' },
   { href: '/dashboard/jobs', icon: Briefcase, label: 'Jobs' },
-  { href: '/dashboard/email', icon: Mail, label: 'Email' },
+  { href: '/dashboard/email/inbox', icon: Mail, label: 'Email' },
   { href: '/dashboard/calendar', icon: Calendar, label: 'Calendar' },
 ];
 
@@ -115,7 +115,9 @@ const Sidebar = ({ sidebarOpen, toggleSidebar, currentPath, children }: SidebarP
             ))}
           </ul>
         </div>
-        {children}
+        <div className="overflow-y-auto">
+          {children}
+        </div>
       </nav>
       
       <footer className="p-4 border-t border-gray-700">

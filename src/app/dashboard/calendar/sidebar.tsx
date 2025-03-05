@@ -1,21 +1,18 @@
 'use client';
 
 import React from 'react';
-
-interface Event {
-  id: number;
-  title: string;
-  start: Date;
-  end: Date;
-  description: string;
-}
+import { CalendarEvent, toSidebarEvent } from '@/app/api/calendar/types';
 
 interface SidebarContentProps {
-  events: Event[];
+  events: CalendarEvent[];
 }
 
 const CalendarSidebarContent = ({ events }: SidebarContentProps) => {
-  const upcomingEvents = events.slice(0, 3);
+  // Convert to sidebar events and get upcoming ones
+  const upcomingEvents = events
+    .map(toSidebarEvent)
+    .sort((a, b) => a.start.getTime() - b.start.getTime())
+    .slice(0, 3);
 
   if (!upcomingEvents.length) return null;
 

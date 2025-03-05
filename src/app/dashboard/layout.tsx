@@ -22,14 +22,6 @@ const DashboardLayout = ({ children }: LayoutProps) => {
     setSidebarOpen(!sidebarOpen);
   };
 
-  // For email sidebar
-  const [currentFolder, setCurrentFolder] = useState('inbox');
-  const mockEmails = [
-    { id: 1, folder: 'inbox', isRead: true },
-    { id: 2, folder: 'inbox', isRead: false },
-    { id: 3, folder: 'inbox', isRead: true }
-  ];
-
   // For calendar sidebar
   const mockEvents = [
     { id: 1, title: 'Team Meeting', start: new Date(2025, 2, 15, 10, 0), end: new Date(2025, 2, 15, 11, 0), description: 'Weekly team sync' },
@@ -44,7 +36,7 @@ const DashboardLayout = ({ children }: LayoutProps) => {
         return 'Dashboard';
       case pathname.includes('/dashboard/jobs'):
         return 'Jobs';
-      case pathname.includes('/dashboard/email'):
+      case pathname.includes('/dashboard/email/inbox'):
         return 'Email';
       case pathname.includes('/dashboard/calendar'):
         return 'Calendar';
@@ -63,9 +55,11 @@ const DashboardLayout = ({ children }: LayoutProps) => {
       case pathname.includes('/dashboard/email'):
         return (
           <EmailSidebarContent 
-            currentFolder={currentFolder}
-            emails={mockEmails}
-            onFolderSelect={setCurrentFolder}
+            onComposeClick={() => {
+              // Dispatch event to show compose modal in the email page
+              const event = new CustomEvent('showComposeEmail');
+              window.dispatchEvent(event);
+            }}
           />
         );
       case pathname.includes('/dashboard/jobs'):
