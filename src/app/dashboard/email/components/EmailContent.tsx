@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { parseEmailBody } from '../services/emailService';
 
-// Add CSS for email content styling
+// Add CSS for email content styling with dark mode support
 const emailContentStyles = `
   .email-html-content {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
@@ -42,6 +42,34 @@ const emailContentStyles = `
     padding-left: 0.5rem;
     margin: 0.5rem 0;
   }
+
+  /* Dark mode styles */
+  .dark .email-html-content {
+    color: #e5e7eb;
+  }
+  
+  .dark .email-html-content blockquote {
+    border-left-color: #4b5563;
+    color: #9ca3af;
+  }
+  
+  .dark .email-html-content a {
+    color: #60a5fa;
+  }
+  
+  .dark .email-html-content pre, .dark .email-html-content code {
+    background-color: #374151;
+    color: #e5e7eb;
+  }
+  
+  .dark .email-forwarded-content {
+    border-left-color: #4b5563;
+  }
+  
+  .dark .email-quoted-text {
+    color: #9ca3af;
+    border-left-color: #4b5563;
+  }
 `;
 
 interface EmailContentProps {
@@ -49,10 +77,19 @@ interface EmailContentProps {
 }
 
 export const EmailContent = ({ body }: EmailContentProps) => {
-  const [parsedContent, setParsedContent] = useState<string>(body);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [parsedContent, setParsedContent] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(true);
   
   useEffect(() => {
+    console.log('EmailContent received body:', body ? `${body.substring(0, 100)}...` : 'empty/null body');
+    
+    if (!body) {
+      console.log('Body is empty or null, showing placeholder');
+      setParsedContent('<p>No content available</p>');
+      setLoading(false);
+      return;
+    }
+    
     // Only parse if the body looks like a raw email
     if (body.includes('Content-Type:') || body.includes('MIME-Version:')) {
       setLoading(true);
@@ -60,7 +97,8 @@ export const EmailContent = ({ body }: EmailContentProps) => {
       const parseBody = async () => {
         try {
           const parsed = await parseEmailBody(body);
-          setParsedContent(parsed);
+          console.log('Parsed email body:', parsed ? `${parsed.substring(0, 100)}...` : 'empty parsed content');
+          setParsedContent(parsed || '<p>No content available after parsing</p>');
         } catch (error) {
           console.error('Error parsing email body:', error);
           // Fallback to displaying the raw content
@@ -72,8 +110,10 @@ export const EmailContent = ({ body }: EmailContentProps) => {
       
       parseBody();
     } else {
-      // Already parsed content
+      // Already parsed content or empty
+      console.log('Using body as-is (already parsed or not raw email format)');
       setParsedContent(body);
+      setLoading(false);
     }
   }, [body]);
 
@@ -89,7 +129,7 @@ export const EmailContent = ({ body }: EmailContentProps) => {
     <>
       <style>{emailContentStyles}</style>
       <div 
-        className="email-html-content"
+        className="email-html-content bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 p-4 rounded-md"
         dangerouslySetInnerHTML={{ __html: parsedContent }}
       />
     </>

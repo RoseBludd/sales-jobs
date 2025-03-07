@@ -1,9 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import EmailPage from '../page';
+import EmailPage from '../components/EmailPage';
 
 export default function InboxPage() {
-  const [folder] = useState<'inbox' | 'sent' | 'draft' | 'trash'>('inbox');
-  return <EmailPage currentFolder={folder} />;
+  return <EmailPage folder="inbox" />;
 }

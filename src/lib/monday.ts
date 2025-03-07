@@ -77,8 +77,88 @@ export function extractEmailFromItem(item: MondayItem) {
   return emailColumn?.text || '';
 }
 
-export async function getUserJobs(userEmail: string) {
-  console.log('🔍 Getting jobs for user:', userEmail);
+export interface JobsResponse {
+  items: {
+    id: string;
+    name: string;
+    email: string;
+    details: Record<string, string>;
+  }[];
+  cursor: string | null;
+  hasMore: boolean;
+  total?: number;
+}
+
+export async function getUserJobs(userEmail: string, options?: { 
+  cursor?: string | null; 
+  limit?: number;
+  forceRefresh?: boolean;
+}) {
+  console.log('🔍 Getting jobs for user:', userEmail, options);
+  
+  const limit = options?.limit || 50;
+  const queryParams = options?.cursor 
+    ? `cursor: "${options.cursor}"`
+    : `query_params: {rules: [{column_id: "${EMAIL_COLUMN_ID_DATA}", compare_value: ["${userEmail}"]}], operator: and}`;
+
+  try {
+    const query = `query {
+      boards(ids: [${BOARD_ID_DATA}]) {
+        name
+        items_page(
+          limit: ${limit}
+          ${queryParams}
+        ) {
+          cursor
+          items {
+            id
+            name
+            column_values(ids: ${JSON.stringify(Object.keys(COLUMN_MAP))}) {
+              id
+              text
+              value
+            }
+          }
+        }
+      }
+    }`;
+
+    const response: MondayResponse = await monday.api(query);
+    
+    if (!response.data?.boards?.[0]?.items_page?.items) {
+      console.error('Invalid response structure:', response);
+      throw new Error('Invalid response structure from Monday.com API');
+    }
+
+    const items = response.data.boards[0].items_page.items;
+    const nextCursor = response.data.boards[0].items_page.cursor;
+    
+    console.log(`📋 Found ${items.length} jobs for user (page):`, userEmail);
+    
+    const formattedItems = items.map(item => ({
+      id: item.id,
+      name: item.name,
+      email: extractEmailFromItem(item),
+      details: item.column_values.reduce((acc: Record<string, string>, col: {id: string, text: string}) => {
+        acc[col.id] = col.text;
+        return acc;
+      }, {} as Record<string, string>)
+    }));
+
+    return {
+      items: formattedItems,
+      cursor: nextCursor,
+      hasMore: Boolean(nextCursor)
+    } as JobsResponse;
+  } catch (error) {
+    console.error('Error fetching user jobs:', error);
+    throw error;
+  }
+}
+
+// Get all jobs for a user (for initial load or full refresh)
+export async function getAllUserJobs(userEmail: string) {
+  console.log('🔍 Getting all jobs for user:', userEmail);
   
   let allItems: MondayItem[] = [];
   let nextCursor: string | null = null;
@@ -87,13 +167,12 @@ export async function getUserJobs(userEmail: string) {
 
   try {
     while (hasMoreItems) {
-      let queryParams = '';
+      const queryParams = isFirstRequest
+        ? `query_params: {rules: [{column_id: "${EMAIL_COLUMN_ID_DATA}", compare_value: ["${userEmail}"]}], operator: and}`
+        : nextCursor ? `cursor: "${nextCursor}"` : '';
       
       if (isFirstRequest) {
-        queryParams = `query_params: {rules: [{column_id: "${EMAIL_COLUMN_ID_DATA}", compare_value: ["${userEmail}"]}], operator: and}`;
         isFirstRequest = false;
-      } else if (nextCursor) {
-        queryParams = `cursor: "${nextCursor}"`;
       }
 
       const query = `query {
@@ -151,10 +230,11 @@ export async function getUserJobs(userEmail: string) {
       }, {} as Record<string, string>)
     }));
   } catch (error) {
-    console.error('Error fetching user jobs:', error);
+    console.error('Error fetching all user jobs:', error);
     throw error;
   }
 }
+
 export async function checkEmailExists(email: string): Promise<boolean> {
   console.log('Checking email existence for:', email);
   try {

@@ -1,7 +1,7 @@
 import Imap from 'node-imap';
-import { EmailMessage, ImapBox } from './types';
-import { parseEmailAddress } from './utils';
+import { EmailMessage } from './types';
 import { imapPool, IMAP_CONFIG, FOLDER_MAPPINGS, cleanupImapPool } from './config';
+import { parseEmail } from './parser';
 
 // Map UI folder names to IMAP folder names
 export const mapFolderToImap = (folder: string): string => {
@@ -29,7 +29,7 @@ interface EnhancedImapConnection extends Imap {
 }
 
 /**
- * Get IMAP configuration
+ * Get IMAP configuration (synchronous version for backward compatibility)
  */
 const getImapConfig = (user: string, password: string) => {
   return {
@@ -231,63 +231,48 @@ export const fetchEmails = async (
           
           // Fetch messages by UID
           const fetchOptions = {
-            bodies: ['HEADER.FIELDS (FROM TO SUBJECT DATE)', 'TEXT'],
+            bodies: [''],  // Fetch the entire message
             struct: true,
           };
           
           const fetch = imap.fetch(paginatedResults, fetchOptions);
-          const emails: EmailMessage[] = [];
           let messageCount = 0;
+          const pendingEmails: Promise<EmailMessage>[] = [];
           
           fetch.on('message', (msg, seqno) => {
             messageCount++;
             console.log(`Processing message ${messageCount} with seqno: ${seqno}`);
             
-            // Create a partial email object
-            const email: Partial<EmailMessage> = {
-              id: parseInt(seqno.toString(), 10),
-              folder: getFolderType(folder),
-              body: '',
-              from: '',
-              fromName: '',
-              to: '',
-              subject: '',
-              date: new Date(),
-              isRead: false,
-              isStarred: false
-            };
+            let rawEmail = '';
+            let uid: string = '';
+            let flags: string[] = [];
             
-            msg.on('body', (stream, info) => {
-              let buffer = '';
+            msg.on('body', (stream) => {
               stream.on('data', (chunk) => {
-                buffer += chunk.toString('utf8');
-              });
-              
-              stream.once('end', () => {
-                if (info.which.includes('HEADER')) {
-                  const header = Imap.parseHeader(buffer);
-                  email.from = header.from?.[0] || '';
-                  email.fromName = parseEmailAddress(header.from?.[0] || '').name;
-                  email.to = header.to?.[0] || '';
-                  email.subject = header.subject?.[0] || '(No Subject)';
-                  email.date = new Date(header.date?.[0] || Date.now());
-                } else {
-                  email.body = buffer;
-                }
+                rawEmail += chunk.toString('utf8');
               });
             });
             
             msg.once('attributes', (attrs) => {
-              email.itemId = attrs.uid.toString();
-              const flags = attrs.flags || [];
-              email.isRead = flags.includes('\\Seen');
-              email.isStarred = flags.includes('\\Flagged');
-              console.log(`Message ${messageCount} attributes: uid=${attrs.uid}, flags=${flags.join(',')}`);
+              uid = attrs.uid.toString();
+              flags = attrs.flags || [];
+              console.log(`Message ${messageCount} attributes: uid=${uid}, flags=${flags.join(',')}`);
             });
             
             msg.once('end', () => {
-              console.log(`Message ${messageCount} processing complete: id=${email.id}, subject=${email.subject}`);
-              emails.push(email as EmailMessage);
+              console.log(`Message ${messageCount} processing complete: seqno=${seqno}, uid=${uid}`);
+              
+              // Parse the email using simpleParser
+              const emailPromise = parseEmail(
+                rawEmail,
+                getFolderType(folder),
+                parseInt(seqno.toString(), 10),
+                uid,
+                flags.includes('\\Seen'),
+                flags.includes('\\Flagged')
+              );
+              
+              pendingEmails.push(emailPromise);
             });
           });
           
@@ -298,20 +283,27 @@ export const fetchEmails = async (
           });
           
           fetch.once('end', () => {
-            console.log(`Fetch completed. Processed ${emails.length}/${messageCount} messages`);
+            console.log(`Fetch completed. Processing ${pendingEmails.length}/${messageCount} messages`);
             
-            if (emails.length === 0 && messageCount > 0) {
-              console.warn('Warning: Messages were processed but none were added to the emails array');
-            }
-            
-            imap.end();
-            resolve({ 
-              emails: emails.sort((a, b) => {
-                // Sort by date descending (newest first)
-                return b.date.getTime() - a.date.getTime();
-              }), 
-              total: totalMessages 
-            });
+            // Wait for all emails to be parsed
+            Promise.all(pendingEmails)
+              .then((parsedEmails) => {
+                console.log(`Successfully parsed ${parsedEmails.length} emails`);
+                
+                imap.end();
+                resolve({ 
+                  emails: parsedEmails.sort((a, b) => {
+                    // Sort by date descending (newest first)
+                    return b.date.getTime() - a.date.getTime();
+                  }), 
+                  total: totalMessages 
+                });
+              })
+              .catch((error) => {
+                console.error('Error parsing emails:', error);
+                imap.end();
+                reject(new Error(`Failed to parse emails: ${error.message}`));
+              });
           });
         });
       });
@@ -356,7 +348,7 @@ export const markEmailAsRead = async (user: string, password: string, itemId: st
         const mappedFolder = mapFolderToImap(folder);
         console.log(`Opening folder ${mappedFolder} to mark message ${uid} as read`);
         
-        imap!.openBox(mappedFolder, false, (err, box) => {
+        imap!.openBox(mappedFolder, false, (err) => {
           if (err) {
             console.error(`Error opening folder ${mappedFolder}:`, err);
             ensureConnectionClosed(imap);
@@ -422,7 +414,7 @@ export const moveEmail = async (
         
         console.log(`Opening folder ${mappedFromFolder} to move message ${uid} to ${mappedToFolder}`);
         
-        imap!.openBox(mappedFromFolder, false, (err, box) => {
+        imap!.openBox(mappedFromFolder, false, (err) => {
           if (err) {
             console.error(`Error opening folder ${mappedFromFolder}:`, err);
             ensureConnectionClosed(imap);
@@ -485,7 +477,7 @@ export const deleteEmail = async (
         const mappedFolder = mapFolderToImap(folder);
         console.log(`Opening folder ${mappedFolder} to delete message ${uid}`);
         
-        imap!.openBox(mappedFolder, false, (err, box) => {
+        imap!.openBox(mappedFolder, false, (err) => {
           if (err) {
             console.error(`Error opening folder ${mappedFolder}:`, err);
             ensureConnectionClosed(imap);
@@ -571,7 +563,7 @@ export const permanentlyDeleteEmail = async (user: string, password: string, ite
         const mappedFolder = mapFolderToImap(folder);
         console.log(`Opening folder ${mappedFolder} to permanently delete message ${uid}`);
         
-        imap!.openBox(mappedFolder, false, (err, box) => {
+        imap!.openBox(mappedFolder, false, (err) => {
           if (err) {
             console.error(`Error opening folder ${mappedFolder}:`, err);
             ensureConnectionClosed(imap);
@@ -616,5 +608,142 @@ export const permanentlyDeleteEmail = async (user: string, password: string, ite
     console.error('Error in permanentlyDeleteEmail:', error);
     ensureConnectionClosed(imap);
     throw error;
+  }
+};
+
+/**
+ * Check if an email with a specific messageId exists in the sent folder
+ * This is useful for verifying that an email was properly saved to the sent folder
+ */
+export const checkSentEmail = async (
+  user: string,
+  password: string,
+  messageId: string
+): Promise<boolean> => {
+  console.log(`Checking for email with messageId ${messageId} in sent folder`);
+  
+  // For AWS WorkMail, we only need to check "Sent Items"
+  const sentFolderName = 'Sent Items';
+  
+  try {
+    console.log(`Checking folder: ${sentFolderName}`);
+    
+    // Create a direct IMAP connection for this operation
+    const imapConfig = {
+      user,
+      password,
+      host: IMAP_CONFIG.host,
+      port: IMAP_CONFIG.port,
+      tls: IMAP_CONFIG.tls,
+      tlsOptions: IMAP_CONFIG.tlsOptions,
+      authTimeout: 30000,
+      connTimeout: 30000,
+    };
+    
+    const found = await new Promise<boolean>((resolve) => {
+      const imap = new Imap(imapConfig);
+      
+      imap.once('ready', () => {
+        imap.openBox(sentFolderName, true, (err) => {
+          if (err) {
+            console.log(`Error opening folder ${sentFolderName}: ${err.message}`);
+            imap.end();
+            resolve(false);
+            return;
+          }
+          
+          console.log(`Successfully opened folder: ${sentFolderName}`);
+          
+          // Search for all messages in the last hour
+          // This is more efficient than searching all messages
+          const oneHourAgo = new Date();
+          oneHourAgo.setHours(oneHourAgo.getHours() - 1);
+          
+          // Format the date in the format required by IMAP: DD-MMM-YYYY
+          // Example: "01-Jan-2023"
+          // const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          
+          // Instead of using SINCE which is causing issues, just search for ALL recent messages
+          const searchCriteria = ['ALL'];
+          
+          imap.search(searchCriteria, (err, results) => {
+            if (err) {
+              console.error('Error searching for messages:', err);
+              imap.end();
+              resolve(false);
+              return;
+            }
+            
+            console.log(`Search returned ${results.length} messages`);
+            
+            if (results.length === 0) {
+              imap.end();
+              resolve(false);
+              return;
+            }
+            
+            // Limit to the most recent 20 messages to avoid processing too many
+            const recentResults = results.slice(-20);
+            console.log(`Processing the ${recentResults.length} most recent messages`);
+            
+            const fetch = imap.fetch(recentResults, { bodies: ['HEADER'] });
+            let found = false;
+            
+            fetch.on('message', (msg) => {
+              msg.on('body', (stream) => {
+                let buffer = '';
+                stream.on('data', (chunk) => {
+                  buffer += chunk.toString('utf8');
+                });
+                
+                stream.once('end', () => {
+                  // Parse the headers
+                  const headers = Imap.parseHeader(buffer);
+                  
+                  // Check if the message ID matches
+                  // Message-ID header might have angle brackets or not
+                  if (headers['message-id']) {
+                    const msgId = headers['message-id'][0];
+                    const cleanMsgId = msgId.replace(/[<>]/g, '');
+                    const cleanSearchId = messageId.replace(/[<>]/g, '');
+                    
+                    console.log(`Comparing message IDs: ${cleanMsgId} vs ${cleanSearchId}`);
+                    
+                    if (cleanMsgId === cleanSearchId || msgId.includes(messageId) || messageId.includes(msgId)) {
+                      console.log('Found matching message ID in headers!');
+                      found = true;
+                    }
+                  }
+                });
+              });
+            });
+            
+            fetch.once('end', () => {
+              console.log('Finished checking all messages');
+              imap.end();
+              resolve(found);
+            });
+          });
+        });
+      });
+      
+      imap.once('error', (err) => {
+        console.error(`IMAP error checking sent folder ${sentFolderName}:`, err);
+        resolve(false);
+      });
+      
+      imap.connect();
+    });
+    
+    if (found) {
+      console.log(`Found email with messageId ${messageId} in folder ${sentFolderName}`);
+      return true;
+    } else {
+      console.log(`Email with messageId ${messageId} not found in folder ${sentFolderName}`);
+      return false;
+    }
+  } catch (error) {
+    console.error(`Error checking folder ${sentFolderName}:`, error);
+    return false;
   }
 }; 

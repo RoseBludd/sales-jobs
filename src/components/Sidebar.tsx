@@ -64,6 +64,27 @@ const Sidebar = ({ sidebarOpen, toggleSidebar, currentPath, children }: SidebarP
   const router = useRouter();
   const { isDark, toggleTheme } = useTheme();
 
+  // Helper function to check if a path is active, including sub-paths
+  const isPathActive = (navPath: string) => {
+    // Special case for dashboard home
+    if (navPath === '/dashboard' && currentPath === '/dashboard') {
+      return true;
+    }
+    
+    // Special case for email section
+    if (navPath === '/dashboard/email/inbox' && currentPath.startsWith('/dashboard/email/')) {
+      return true;
+    }
+    
+    // For other items, check if currentPath starts with navPath
+    // But ensure it's not just matching a prefix of another path
+    if (navPath !== '/dashboard' && (currentPath === navPath || currentPath.startsWith(`${navPath}/`))) {
+      return true;
+    }
+    
+    return false;
+  };
+
   const handleSignOut = async () => {
     try {
       await signOut({ redirect: true, callbackUrl: '/login' });
@@ -78,27 +99,28 @@ const Sidebar = ({ sidebarOpen, toggleSidebar, currentPath, children }: SidebarP
 
   if (!sidebarOpen) {
     return (
-      <div className="w-0 -ml-1 transition-all duration-300 overflow-hidden" />
+      <aside className="fixed md:relative w-0 transition-all duration-300 ease-in-out transform -translate-x-full opacity-0 overflow-hidden" />
     );
   }
 
   return (
-    <aside className="w-64 transition-all duration-300 bg-gray-800 text-white h-full flex flex-col">
-      <header className="h-16 p-4 shadow-sm dark:shadow-gray-700/20 border-b border-gray-700 flex justify-between items-center">
-        <Image
-          src="/restoremasters_logo.png"
-          alt="Restore Masters"
-          width={150}
-          height={40}
-          className="object-contain"
-          priority
-        />
+    <aside className="fixed md:relative w-[80%] sm:w-64 transition-all duration-300 ease-in-out transform translate-x-0 bg-gray-800 text-white h-full flex flex-col z-30 shadow-lg">
+      <header className="h-16 p-4 shadow-sm dark:shadow-gray-700/20 border-b border-gray-700 flex items-center relative">
+        <div className="absolute left-0 right-0 flex justify-center">
+          <Image
+            src="/restoremasters_logo.png"
+            alt="Restore Masters"
+            width={150}
+            height={40}
+            className="object-contain"
+          />
+        </div>
         <button 
-          className="p-1 hover:bg-gray-700 rounded-md transition-colors"
+          className="p-1 hover:bg-gray-700 rounded-md transition-colors ml-auto z-10"
           onClick={toggleSidebar}
           aria-label="Toggle sidebar"
         >
-          <ChevronLeft size={20} />
+          <ChevronLeft size={20} className="transition-transform duration-200" />
         </button>
       </header>
       
@@ -110,7 +132,7 @@ const Sidebar = ({ sidebarOpen, toggleSidebar, currentPath, children }: SidebarP
               <NavLink
                 key={item.href}
                 {...item}
-                isActive={currentPath === item.href}
+                isActive={isPathActive(item.href)}
               />
             ))}
           </ul>

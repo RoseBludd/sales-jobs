@@ -1,32 +1,37 @@
 /**
  * Email service for handling MIME parsing and other email-related functionality
- * This implementation uses simple regex parsing, but could be upgraded to use
- * the postal-mime library for more robust parsing if needed.
+ * Using server-side API for parsing instead of direct mailparser usage
  */
 
-import { Email, EmailAttachment } from '../types';
-// @ts-ignore - mime has built-in types but TypeScript might not recognize them
+import { EmailAttachment } from '../types';
+// The mime package has built-in types
 import mime from 'mime';
-// @ts-ignore - postal-mime doesn't have type declarations
-import PostalMime from 'postal-mime';
-
-interface PostalMimeAttachment {
-  filename?: string;
-  mimeType: string;
-  content: string;
-}
 
 /**
  * Parse a raw email body to extract HTML or text content
- * Using postal-mime for robust parsing
+ * Using server API for parsing to avoid Node.js dependencies on client
  */
 export async function parseEmailBody(rawEmail: string): Promise<string> {
   try {
-    const email = await PostalMime.parse(rawEmail);
-    return email.html || email.text || rawEmail;
+    // For client-side, we'll use a server API endpoint to parse the email
+    // This avoids importing node-specific modules on the client
+    const response = await fetch('/api/email/parse', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ rawEmail }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to parse email: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    return result.html || result.textAsHtml || `<pre>${result.text || ''}</pre>` || parseEmailBodySimple(rawEmail);
   } catch (error) {
-    console.error('Error parsing email with PostalMime:', error);
-    // Fallback to simple parsing if PostalMime fails
+    console.error('Error parsing email with server API:', error);
+    // Fallback to simple parsing if server API fails
     return parseEmailBodySimple(rawEmail);
   }
 }
@@ -70,21 +75,27 @@ function parseEmailBodySimple(rawEmail: string): string {
 }
 
 /**
- * Extract attachments from a raw email using PostalMime
+ * Extract attachments from a raw email using server API
  */
 export async function extractAttachments(rawEmail: string): Promise<EmailAttachment[]> {
   try {
-    const email = await PostalMime.parse(rawEmail, { attachmentEncoding: 'base64' });
-    
-    return email.attachments.map((att: PostalMimeAttachment) => ({
-      id: Math.random().toString(36).substring(2, 9),
-      name: att.filename || 'unnamed',
-      size: att.content.length,
-      type: att.mimeType,
-    }));
+    // For client-side, we'll use a server API endpoint to extract attachments
+    const response = await fetch('/api/email/attachments', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ rawEmail }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to extract attachments: ${response.statusText}`);
+    }
+
+    return await response.json();
   } catch (error) {
-    console.error('Error extracting attachments with PostalMime:', error);
-    // Fallback to simple extraction if PostalMime fails
+    console.error('Error extracting attachments with server API:', error);
+    // Fallback to simple extraction if server API fails
     return extractAttachmentsSimple(rawEmail);
   }
 }

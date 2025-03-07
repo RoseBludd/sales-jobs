@@ -1,7 +1,7 @@
 // Rate limiting implementation for Next.js API routes
 export const rateLimit = {
-  windowMs: 15 * 60 * 1000,
-  max: 100,
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 200, // Increased from 100 to 200
   current: new Map<string, { count: number; resetTime: number }>(),
 
   checkLimit(ip: string): boolean {
@@ -20,11 +20,36 @@ export const rateLimit = {
     }
 
     if (record.count >= this.max) {
+      // Add Retry-After header information
       return false;
     }
 
     record.count++;
     return true;
+  },
+  
+  // Get remaining requests for an IP
+  getRemainingRequests(ip: string): number {
+    const now = Date.now();
+    const record = this.current.get(ip);
+    
+    if (!record || now > record.resetTime) {
+      return this.max;
+    }
+    
+    return Math.max(0, this.max - record.count);
+  },
+  
+  // Get reset time for an IP
+  getResetTime(ip: string): number {
+    const now = Date.now();
+    const record = this.current.get(ip);
+    
+    if (!record) {
+      return now + this.windowMs;
+    }
+    
+    return record.resetTime;
   }
 };
 

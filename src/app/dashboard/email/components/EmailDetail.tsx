@@ -1,19 +1,19 @@
 'use client';
 
-import React from 'react';
-import { ArrowLeft, Star } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Star, Trash, Reply, Forward, MoreHorizontal, Download } from 'lucide-react';
 import { EmailContent } from './EmailContent';
 import { EmailAttachment } from '../types';
 
 interface Email {
   id: number;
-  folder: 'inbox' | 'sent' | 'draft' | 'trash';
+  folder: 'inbox' | 'sent' | 'draft' | 'trash' | 'spam';
   from: string;
   fromName: string;
   to: string;
   subject: string;
   body: string;
-  date: Date;
+  date: Date | string;
   isRead: boolean;
   isStarred: boolean;
   attachments?: EmailAttachment[];
@@ -24,156 +24,219 @@ interface EmailDetailProps {
   email: Email;
   onBack: () => void;
   onDelete: () => void;
-  onMove: (folder: 'inbox' | 'sent' | 'draft' | 'trash') => void;
+  onMove: (folder: 'inbox' | 'sent' | 'draft' | 'trash' | 'spam') => void;
+  isMobileView?: boolean;
+  currentFolder: 'inbox' | 'sent' | 'draft' | 'trash' | 'spam';
 }
 
 const EmailDetail = ({ 
   email, 
   onBack, 
   onDelete,
-  onMove
-}: EmailDetailProps) => (
-  <div className="h-full flex flex-col">
-    <div className="p-4 border-b dark:border-gray-700 flex items-center justify-between">
-      <div className="flex items-center">
-        <button 
-          onClick={onBack} 
-          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
-          aria-label="Go back"
-        >
-          <ArrowLeft size={20} />
-        </button>
-        <div className="ml-4">
-          <h2 className="text-xl font-semibold">{email.subject}</h2>
-          <p className="text-sm text-gray-500">
-            {new Date(email.date).toLocaleString()}
-          </p>
+  onMove,
+  isMobileView = false,
+  currentFolder
+}: EmailDetailProps) => {
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Debug log to check if the component is receiving the props correctly
+  useEffect(() => {
+    console.log('EmailDetail rendering with:', { 
+      emailId: email?.id, 
+      subject: email?.subject, 
+      currentFolder 
+    });
+  }, [email, currentFolder]);
+  
+  const toggleDropdown = () => {
+    setShowDropdown(!showDropdown);
+  };
+  
+  const formatDate = (date: Date | string) => {
+    if (!date) return 'Unknown date';
+    
+    // Ensure date is a Date object
+    try {
+      const dateObj = date instanceof Date ? date : new Date(date);
+      return dateObj.toLocaleString(undefined, {
+        weekday: 'short',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return String(date);
+    }
+  };
+  
+  if (!email) {
+    return (
+      <div className="h-full flex items-center justify-center bg-white dark:bg-gray-800">
+        <div className="text-center text-gray-500 dark:text-gray-400">
+          <p>Email not found or still loading...</p>
         </div>
       </div>
-      <div className="flex items-center space-x-2">
-        <button 
-          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
-          aria-label={email.isStarred ? "Unstar email" : "Star email"}
-        >
-          <Star 
-            size={20} 
-            fill={email.isStarred ? "currentColor" : "none"} 
-            className={email.isStarred ? "text-yellow-400" : ""}
-          />
-        </button>
-        <div className="relative group">
+    );
+  }
+  
+  return (
+    <div className="h-full flex flex-col bg-white dark:bg-gray-800">
+      {/* Email header */}
+      <div className="p-4 border-b dark:border-gray-700 flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800 z-10 shadow-sm">
+        <div className="flex items-center">
           <button 
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
-            aria-label="More options"
+            onClick={onBack} 
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-500 dark:text-gray-400 mr-2 md:mr-4"
+            aria-label="Go back"
           >
-            <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
-              <path 
-                stroke="currentColor" 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                strokeWidth="2" 
-                d="M12 12h.01M12 6h.01M12 18h.01"
-              />
-            </svg>
+            <ArrowLeft size={20} />
           </button>
-          <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 hidden group-hover:block">
-            <div className="py-1">
-              <button 
-                className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-                onClick={() => onMove('inbox')}
-              >
-                Move to Inbox
-              </button>
-              <button 
-                className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-                onClick={() => onMove('trash')}
-              >
-                Move to Trash
-              </button>
-              <button 
-                className="block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-                onClick={onDelete}
-              >
-                Delete Permanently
-              </button>
-            </div>
+          <h2 className={`text-lg font-medium text-gray-900 dark:text-gray-100 ${isMobileView ? 'line-clamp-1 max-w-[200px]' : 'line-clamp-1'}`}>
+            {email.subject || '(No subject)'}
+          </h2>
+        </div>
+        <div className="flex items-center space-x-1">
+          <button 
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-500 dark:text-gray-400"
+            aria-label={email.isStarred ? "Unstar email" : "Star email"}
+          >
+            <Star 
+              size={20} 
+              fill={email.isStarred ? "currentColor" : "none"} 
+              className={email.isStarred ? "text-yellow-400" : ""}
+            />
+          </button>
+          <div className="relative">
+            <button 
+              onClick={toggleDropdown}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-500 dark:text-gray-400"
+              aria-label="More options"
+              aria-expanded={showDropdown}
+              aria-haspopup="true"
+            >
+              <MoreHorizontal size={20} />
+            </button>
+            {showDropdown && (
+              <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border dark:border-gray-700 py-1">
+                {currentFolder !== 'inbox' && (
+                  <button 
+                    className="flex w-full items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    onClick={() => onMove('inbox')}
+                  >
+                    <ArrowLeft size={16} className="mr-2" />
+                    Move to Inbox
+                  </button>
+                )}
+                {currentFolder !== 'trash' && (
+                  <button 
+                    className="flex w-full items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    onClick={() => onMove('trash')}
+                  >
+                    <Trash size={16} className="mr-2" />
+                    Move to Trash
+                  </button>
+                )}
+                <button 
+                  className="flex w-full items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  onClick={onDelete}
+                >
+                  <Trash size={16} className="mr-2" />
+                  Delete Permanently
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
-    </div>
-    
-    <div className="p-4 border-b dark:border-gray-700">
-      <div className="flex items-start">
-        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
-          {email.fromName.charAt(0).toUpperCase()}
-        </div>
-        <div className="ml-3 flex-1">
-          <div className="flex justify-between">
-            <div>
-              <p className="font-semibold">{email.fromName}</p>
-              <p className="text-sm text-gray-500">
-                &lt;{email.from}&gt;
-              </p>
-            </div>
-          </div>
-          <p className="text-sm text-gray-500 mt-1">
-            To: {email.to}
-          </p>
-        </div>
-      </div>
-    </div>
-    
-    <div className="flex-1 overflow-auto p-4">
-      <EmailContent body={email.body} />
       
+      {/* Email metadata */}
+      <div className="p-4 border-b dark:border-gray-700">
+        <div className="flex flex-col space-y-2">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center">
+              <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-600 dark:text-blue-300 mr-3 flex-shrink-0">
+                <span className="text-lg font-medium">{(email.fromName || email.from).charAt(0).toUpperCase()}</span>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">{email.fromName || email.from}</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  To: {email.to}
+                </p>
+              </div>
+            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              {formatDate(email.date)}
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Email body */}
+      <div className="flex-1 overflow-y-auto p-4">
+        {isLoading ? (
+          <div className="flex justify-center items-center h-full">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-gray-100"></div>
+          </div>
+        ) : (
+          <EmailContent body={email.body} />
+        )}
+      </div>
+      
+      {/* Email attachments if any */}
       {email.attachments && email.attachments.length > 0 && (
-        <div className="mt-6 border-t dark:border-gray-700 pt-4">
-          <h3 className="font-semibold mb-2">Attachments ({email.attachments.length})</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {email.attachments.map(attachment => (
+        <div className="p-4 border-t dark:border-gray-700">
+          <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+            Attachments ({email.attachments.length})
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {email.attachments.map((attachment, index) => (
               <div 
-                key={attachment.id} 
-                className="p-3 border dark:border-gray-700 rounded-md flex items-center"
+                key={index}
+                className="flex items-center p-2 border dark:border-gray-700 rounded-md bg-gray-50 dark:bg-gray-700"
               >
-                <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center text-gray-500">
-                  <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
-                    <path 
-                      stroke="currentColor" 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth="2" 
-                      d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
+                <div className="mr-2">
+                  <Download size={16} className="text-gray-500 dark:text-gray-400" />
                 </div>
-                <div className="ml-3 flex-1 min-w-0">
-                  <p className="font-medium truncate">{attachment.name}</p>
-                  <p className="text-sm text-gray-500">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">
+                    {attachment.name}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     {(attachment.size / 1024).toFixed(1)} KB
                   </p>
                 </div>
-                <a 
-                  href="#"
-                  className="ml-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
-                  aria-label="Download attachment"
-                >
-                  <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
-                    <path 
-                      stroke="currentColor" 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth="2" 
-                      d="M12 15V3m0 12l-4-4m4 4l4-4M2 17l.621 2.485A2 2 0 0 0 4.561 21H19.439a2 2 0 0 0 1.94-1.515L22 17"
-                    />
-                  </svg>
-                </a>
               </div>
             ))}
           </div>
         </div>
       )}
+      
+      {/* Email actions */}
+      <div className="p-4 border-t dark:border-gray-700 flex justify-between">
+        <div className="flex space-x-2">
+          <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md text-gray-500 dark:text-gray-400 flex items-center">
+            <Reply size={18} className="mr-1" />
+            <span className="text-sm">Reply</span>
+          </button>
+          <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md text-gray-500 dark:text-gray-400 flex items-center">
+            <Forward size={18} className="mr-1" />
+            <span className="text-sm">Forward</span>
+          </button>
+        </div>
+        <button 
+          onClick={onDelete}
+          className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-md text-red-500 flex items-center"
+        >
+          <Trash size={18} className="mr-1" />
+          <span className="text-sm">Delete</span>
+        </button>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default EmailDetail; 

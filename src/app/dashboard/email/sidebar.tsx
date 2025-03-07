@@ -2,10 +2,10 @@
 
 import React from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { Inbox, Send, Archive, Trash, Plus, Loader2 } from 'lucide-react';
+import { Inbox, Send, Archive, Trash, Plus, Loader2, AlertTriangle } from 'lucide-react';
 import { useEmailContext } from './context/EmailProvider';
 
-type FolderType = 'inbox' | 'sent' | 'draft' | 'trash';
+type FolderType = 'inbox' | 'sent' | 'draft' | 'trash' | 'spam';
 
 const EmailSidebarContent = () => {
   const router = useRouter();
@@ -17,9 +17,9 @@ const EmailSidebarContent = () => {
   // Use the shared context for shared state
   const {
     emails,
-    setShowCompose,
     isLoading,
-    setIsLoading
+    setShowCompose,
+    openComposeModal
   } = useEmailContext();
   
   // Count unread emails for each folder
@@ -27,16 +27,11 @@ const EmailSidebarContent = () => {
     inbox: emails.filter(e => e.folder === 'inbox' && !e.isRead).length,
     sent: 0,
     draft: emails.filter(e => e.folder === 'draft').length,
-    trash: 0
+    trash: 0,
+    spam: emails.filter(e => e.folder === 'spam' && !e.isRead).length
   };
-
+  
   const handleFolderSelect = (folder: FolderType) => {
-    if (currentFolder === folder) return;
-    
-    console.log(`Changing folder from ${currentFolder} to ${folder}`);
-    setIsLoading(true);
-    
-    // Navigate to the corresponding page
     router.push(`/dashboard/email/${folder}`);
   };
   
@@ -45,116 +40,145 @@ const EmailSidebarContent = () => {
       <div className="transform transition-all duration-200 hover:translate-y-[-2px]">
         <button
           className="w-full flex items-center justify-center p-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transform hover:scale-[1.02] transition-all duration-200 shadow-sm hover:shadow-md mb-6"
-          onClick={() => setShowCompose(true)}
+          onClick={() => {
+            console.log('Sidebar compose button clicked');
+            // Use the openComposeModal method from context
+            openComposeModal();
+            // Also dispatch the event as a backup
+            const event = new CustomEvent('showComposeModal');
+            console.log('Dispatching showComposeModal event:', event);
+            window.dispatchEvent(event);
+            console.log('Event dispatched');
+          }}
+          style={{ pointerEvents: 'auto' }}
         >
           <Plus size={18} className="mr-2 animate-pulse" />
           <span className="font-medium">Compose</span>
         </button>
+      
       </div>
       
       <div className="flex-1 overflow-y-auto -mx-4 px-4">
-        <p className="text-gray-400 text-xs uppercase font-semibold tracking-wider mb-3 px-2">Folders</p>
-        <ul className="space-y-1">
-          <li className="mb-1">
-            <button
-              className={`flex items-center p-3 w-full text-left rounded-lg transition-all duration-200
-                ${currentFolder === 'inbox'
-                  ? 'bg-blue-500/10 text-blue-600 font-medium shadow-sm dark:bg-blue-500/20 dark:text-blue-400'
-                  : 'hover:bg-gray-700 dark:hover:bg-gray-800'}
-                transform hover:scale-[1.01] hover:shadow-sm`}
-              onClick={() => handleFolderSelect('inbox')}
-              disabled={isLoading && currentFolder !== 'inbox'}
-              aria-current={currentFolder === 'inbox' ? 'page' : undefined}
-            >
-              <div className="relative">
-                {isLoading && currentFolder === 'inbox' ? (
-                  <Loader2 size={18} className="mr-3 animate-spin text-blue-500 animate-in fade-in" />
-                ) : (
-                  <Inbox size={18} className={`mr-3 transition-all duration-200 transform
-                    ${currentFolder === 'inbox' ? 'text-blue-500 scale-110' : 'text-gray-400 hover:text-blue-400 hover:scale-105'}`} />
-                )}
-              </div>
+        <nav className="space-y-1">
+          <button
+            className={`w-full flex items-center justify-between px-4 py-2.5 text-left rounded-lg transition-colors ${
+              currentFolder === 'inbox'
+                ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                : 'text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+            }`}
+            onClick={() => handleFolderSelect('inbox')}
+          >
+            <div className="flex items-center">
+              <Inbox
+                size={18}
+                className={`mr-3 ${
+                  currentFolder === 'inbox' ? 'text-blue-500 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'
+                }`}
+              />
               <span className="font-medium">Inbox</span>
-              {unreadCounts.inbox > 0 && (
-                <span className="ml-auto inline-flex items-center justify-center bg-blue-500 text-white text-xs font-bold rounded-full px-2 py-1 min-w-[1.5rem] transform transition-all duration-200 hover:scale-110 animate-in fade-in slide-in-from-right">
-                  {unreadCounts.inbox}
-                </span>
-              )}
-            </button>
-          </li>
-          <li className="mb-1">
-            <button
-              className={`flex items-center p-3 w-full text-left rounded-lg transition-all duration-200
-                ${currentFolder === 'sent'
-                  ? 'bg-green-500/10 text-green-600 font-medium shadow-sm dark:bg-green-500/20 dark:text-green-400'
-                  : 'hover:bg-gray-700 dark:hover:bg-gray-800'}
-                transform hover:scale-[1.01] hover:shadow-sm`}
-              onClick={() => handleFolderSelect('sent')}
-              disabled={isLoading && currentFolder !== 'sent'}
-              aria-current={currentFolder === 'sent' ? 'page' : undefined}
-            >
-              <div className="relative">
-                {isLoading && currentFolder === 'sent' ? (
-                  <Loader2 size={18} className="mr-3 animate-spin text-green-500 animate-in fade-in duration-300" />
-                ) : (
-                  <Send size={18} className={`mr-3 transition-all duration-200 transform
-                    ${currentFolder === 'sent' ? 'text-green-500 scale-110' : 'text-gray-400 hover:text-green-400 hover:scale-105'}`} />
-                )}
-              </div>
+            </div>
+            {unreadCounts.inbox > 0 && (
+              <span className="inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 text-xs font-medium rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400">
+                {unreadCounts.inbox}
+              </span>
+            )}
+          </button>
+          
+          <button
+            className={`w-full flex items-center justify-between px-4 py-2.5 text-left rounded-lg transition-colors ${
+              currentFolder === 'sent'
+                ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                : 'text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+            }`}
+            onClick={() => handleFolderSelect('sent')}
+          >
+            <div className="flex items-center">
+              <Send
+                size={18}
+                className={`mr-3 ${
+                  currentFolder === 'sent' ? 'text-blue-500 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'
+                }`}
+              />
               <span className="font-medium">Sent</span>
-            </button>
-          </li>
-          <li className="mb-1">
-            <button
-              className={`flex items-center p-3 w-full text-left rounded-lg transition-all duration-200
-                ${currentFolder === 'draft'
-                  ? 'bg-indigo-500/10 text-indigo-600 font-medium shadow-sm dark:bg-indigo-500/20 dark:text-indigo-400'
-                  : 'hover:bg-gray-700 dark:hover:bg-gray-800'}
-                transform hover:scale-[1.01] hover:shadow-sm`}
-              onClick={() => handleFolderSelect('draft')}
-              disabled={isLoading && currentFolder !== 'draft'}
-              aria-current={currentFolder === 'draft' ? 'page' : undefined}
-            >
-              <div className="relative">
-                {isLoading && currentFolder === 'draft' ? (
-                  <Loader2 size={18} className="mr-3 animate-spin text-indigo-500 animate-in fade-in duration-300" />
-                ) : (
-                  <Archive size={18} className={`mr-3 transition-all duration-200 transform
-                    ${currentFolder === 'draft' ? 'text-indigo-500 scale-110' : 'text-gray-400 hover:text-indigo-400 hover:scale-105'}`} />
-                )}
-              </div>
-              <span className="font-medium">Draft</span>
-              {unreadCounts.draft > 0 && (
-                <span className="ml-auto inline-flex items-center justify-center bg-indigo-500 text-white text-xs font-bold rounded-full px-2 py-1 min-w-[1.5rem] transform transition-all duration-200 hover:scale-110 animate-in fade-in slide-in-from-right">
-                  {unreadCounts.draft}
-                </span>
-              )}
-            </button>
-          </li>
-          <li className="mb-1">
-            <button
-              className={`flex items-center p-3 w-full text-left rounded-lg transition-all duration-200
-                ${currentFolder === 'trash'
-                  ? 'bg-red-500/10 text-red-600 font-medium shadow-sm dark:bg-red-500/20 dark:text-red-400'
-                  : 'hover:bg-gray-700 dark:hover:bg-gray-800'}
-                transform hover:scale-[1.01] hover:shadow-sm`}
-              onClick={() => handleFolderSelect('trash')}
-              disabled={isLoading && currentFolder !== 'trash'}
-              aria-current={currentFolder === 'trash' ? 'page' : undefined}
-            >
-              <div className="relative">
-                {isLoading && currentFolder === 'trash' ? (
-                  <Loader2 size={18} className="mr-3 animate-spin text-red-500 dark:text-red-400 animate-in fade-in duration-300" />
-                ) : (
-                  <Trash size={18} className={`mr-3 transition-all duration-200 transform
-                    ${currentFolder === 'trash' ? 'text-red-500 dark:text-red-400 scale-110' : 'text-gray-400 dark:text-gray-500 hover:text-red-400 hover:scale-105'}`} />
-                )}
-              </div>
+            </div>
+          </button>
+          
+          <button
+            className={`w-full flex items-center justify-between px-4 py-2.5 text-left rounded-lg transition-colors ${
+              currentFolder === 'draft'
+                ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                : 'text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+            }`}
+            onClick={() => handleFolderSelect('draft')}
+          >
+            <div className="flex items-center">
+              <Archive
+                size={18}
+                className={`mr-3 ${
+                  currentFolder === 'draft' ? 'text-blue-500 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'
+                }`}
+              />
+              <span className="font-medium">Drafts</span>
+            </div>
+            {unreadCounts.draft > 0 && (
+              <span className="inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 text-xs font-medium rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+                {unreadCounts.draft}
+              </span>
+            )}
+          </button>
+          
+          <button
+            className={`w-full flex items-center justify-between px-4 py-2.5 text-left rounded-lg transition-colors ${
+              currentFolder === 'trash'
+                ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                : 'text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+            }`}
+            onClick={() => handleFolderSelect('trash')}
+          >
+            <div className="flex items-center">
+              <Trash
+                size={18}
+                className={`mr-3 ${
+                  currentFolder === 'trash' ? 'text-blue-500 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'
+                }`}
+              />
               <span className="font-medium">Trash</span>
-            </button>
-          </li>
-        </ul>
+            </div>
+          </button>
+          
+          {/* Spam Folder */}
+          <button
+            className={`w-full flex items-center justify-between px-4 py-2.5 text-left rounded-lg transition-colors ${
+              currentFolder === 'spam'
+                ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                : 'text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+            }`}
+            onClick={() => handleFolderSelect('spam')}
+          >
+            <div className="flex items-center">
+              <AlertTriangle
+                size={18}
+                className={`mr-3 ${
+                  currentFolder === 'spam' ? 'text-blue-500 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'
+                }`}
+              />
+              <span className="font-medium">Spam</span>
+            </div>
+            {unreadCounts.spam > 0 && (
+              <span className="inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 text-xs font-medium rounded-full bg-yellow-100 dark:bg-yellow-900 text-yellow-600 dark:text-yellow-400">
+                {unreadCounts.spam}
+              </span>
+            )}
+          </button>
+        </nav>
       </div>
+      
+      {isLoading && (
+        <div className="flex items-center justify-center py-4">
+          <Loader2 size={20} className="animate-spin text-blue-500 mr-2" />
+          <span className="text-sm text-gray-500 dark:text-gray-400">Loading...</span>
+        </div>
+      )}
     </div>
   );
 };

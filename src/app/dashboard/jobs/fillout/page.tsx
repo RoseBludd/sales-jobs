@@ -1,41 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Script from 'next/script';
+import { useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
-declare global {
-  interface Window {
-    Fillout?: {
-      initializeAll: () => void;
-      onFormSubmit?: (callback: (response: unknown) => void) => void;
-    };
-  }
-}
-
 export default function FilloutPage() {
-  const [isFormLoaded, setIsFormLoaded] = useState(false);
-  const [isScriptLoaded, setIsScriptLoaded] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const initializeForm = () => {
-      if (window.Fillout && !isFormLoaded) {
-        window.Fillout.initializeAll();
-        setIsFormLoaded(true);
-
-        // Optional: Handle form submission
-        window.Fillout.onFormSubmit?.(response => {
-          console.log('Form submitted:', response);
-          // Handle form submission response
-        });
-      }
-    };
-
-    if (isScriptLoaded) {
-      initializeForm();
-    }
-  }, [isScriptLoaded, isFormLoaded]);
+  const handleIframeLoad = () => {
+    setIsLoading(false);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -63,7 +37,7 @@ export default function FilloutPage() {
 
           {/* Form Container */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-            {!isFormLoaded && (
+            {isLoading && (
               <div className="flex justify-center items-center h-[600px]">
                 <div className="flex flex-col items-center gap-4">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
@@ -78,10 +52,11 @@ export default function FilloutPage() {
                 width: '100%', 
                 height: '600px', 
                 border: 'none',
-                display: isFormLoaded ? 'block' : 'none'
+                display: isLoading ? 'none' : 'block'
               }}
               title="New Project Form"
               allowFullScreen
+              onLoad={handleIframeLoad}
             />
           </div>
 
@@ -91,18 +66,6 @@ export default function FilloutPage() {
           </p>
         </div>
       </main>
-
-      {/* Fillout Script */}
-      <Script
-        src="https://server.fillout.com/embed/v1/"
-        strategy="afterInteractive"
-        id="fillout-script"
-        onLoad={() => setIsScriptLoaded(true)}
-        onError={(e) => {
-          console.error('Error loading Fillout script:', e);
-          // You might want to show an error message to the user
-        }}
-      />
     </div>
   );
 }

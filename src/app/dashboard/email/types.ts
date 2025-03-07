@@ -7,13 +7,13 @@ export interface EmailAttachment {
 
 export interface Email {
   id: number;
-  folder: 'inbox' | 'sent' | 'draft' | 'trash';
+  folder: 'inbox' | 'sent' | 'draft' | 'trash' | 'spam';
   from: string;
   fromName: string;
   to: string;
   subject: string;
   body: string;
-  date: Date;
+  date: Date | string;
   isRead: boolean;
   isStarred: boolean;
   attachments?: EmailAttachment[];
