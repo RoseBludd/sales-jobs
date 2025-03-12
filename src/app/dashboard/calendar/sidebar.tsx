@@ -2,11 +2,12 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { CalendarEvent, toSidebarEvent } from '@/app/api/calendar/types';
+import { CalendarEvent, toSidebarEvent } from '@/app/api/events/types';
 import { Calendar as CalendarIcon, Plus, X, Clock, MapPin, CalendarDays } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { useCalendarContext } from './context/CalendarProvider';
+import { createCalendarEvent } from './services/calendarService';
 
 // Add a fade-in animation
 const AnimationStyles = () => (
@@ -38,7 +39,8 @@ const CreateEventModal = () => {
   // Use the calendar context
   const { 
     showCreateEventModal, 
-    setShowCreateEventModal
+    setShowCreateEventModal,
+    setRefreshNeeded
   } = useCalendarContext();
 
   // Handle click outside to close modal
@@ -128,48 +130,22 @@ const CreateEventModal = () => {
         return;
       }
       
-      // For all-day events, ensure we have the correct format for API
-      let eventToSubmit = { ...newEvent };
+      // Convert the event data to the format expected by our service
+      const eventData = {
+        subject: newEvent.Subject,
+        start: startDate.toISOString(),
+        end: endDate.toISOString(),
+        description: newEvent.Description,
+        location: newEvent.Location,
+        isAllDay: newEvent.IsAllDay,
+        attendees: [] // No attendees from the sidebar quick create
+      };
       
-      if (newEvent.IsAllDay) {
-        // For all-day events, set the time to start at 00:00 and end at 23:59
-        const startDateStr = newEvent.Start;
-        const endDateStr = newEvent.End;
-        
-        // Set start time to beginning of day
-        const formattedStartDate = new Date(startDateStr);
-        formattedStartDate.setHours(0, 0, 0, 0);
-        
-        // Set end time to end of day
-        const formattedEndDate = new Date(endDateStr);
-        formattedEndDate.setHours(23, 59, 59, 999);
-        
-        eventToSubmit = {
-          ...newEvent,
-          Start: formattedStartDate.toISOString(),
-          End: formattedEndDate.toISOString()
-        };
-      }
+      console.log('Creating new event:', eventData);
       
-      console.log('Creating new event:', eventToSubmit);
-      
-      // Create event
-      const response = await fetch('/api/calendar', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(eventToSubmit),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Server error:', errorData);
-        throw new Error(errorData.error || 'Failed to create event');
-      }
-      
-      const createdEvent = await response.json();
-      console.log('Event created successfully:', createdEvent);
+      // Use our calendar service to create the event
+      const eventId = await createCalendarEvent(eventData);
+      console.log('Event created successfully with ID:', eventId);
       
       // Close modal and reset form
       setShowCreateEventModal(false);
@@ -182,27 +158,59 @@ const CreateEventModal = () => {
         IsAllDay: false
       });
       
-      toast.success('Real calendar integration coming soon!');
+      // Show success message
+      toast.success('Event created successfully');
       
-      // Force immediate refresh
+      // Set the refresh flag in the context
+      setRefreshNeeded(true);
+      
+      // Force a direct API call to fetch the latest events
       try {
-        const refreshResponse = await fetch('/api/calendar');
-        if (refreshResponse.ok) {
-          const refreshedEvents = await refreshResponse.json();
-          console.log(`Fetched ${refreshedEvents.length} events after creation`);
+        const currentDate = new Date();
+        // Calculate a wide date range to ensure we capture the new event
+        const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 6, 1);
+        const endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 7, 0);
+        
+        console.log('Directly fetching events after creation from', startDate.toISOString(), 'to', endDate.toISOString());
+        
+        // Make a direct API call to fetch events
+        const response = await fetch(
+          `/api/events?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`
+        );
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log(`Directly fetched ${data.events?.length || 0} events after creation`);
           
-          // Dispatch refresh event to update the calendar
-          window.dispatchEvent(new CustomEvent('calendar-refresh'));
+          // Dispatch a custom event with the fetched events
+          window.dispatchEvent(new CustomEvent('calendar-refresh-with-data', { 
+            detail: { events: data.events || [] } 
+          }));
+        } else {
+          console.error('Failed to directly fetch events after creation');
         }
-      } catch (error) {
-        console.error('Error refreshing events after creation:', error);
+      } catch (fetchError) {
+        console.error('Error directly fetching events after creation:', fetchError);
       }
       
-      // Refresh the calendar page
-      router.refresh();
+      // Dispatch event to refresh calendar with a slight delay to ensure backend processing
+      setTimeout(() => {
+        console.log('Dispatching calendar-refresh event after event creation');
+        window.dispatchEvent(new CustomEvent('calendar-refresh'));
+        
+        // Force a router refresh to ensure the page updates
+        router.refresh();
+      }, 500);
+      
+      // Add an additional refresh after a longer delay
+      setTimeout(() => {
+        console.log('Dispatching delayed calendar-refresh event');
+        window.dispatchEvent(new CustomEvent('calendar-refresh'));
+        setRefreshNeeded(true);
+      }, 3000);
     } catch (error) {
-      console.error('Error creating event:', error);
-      toast.error(`${error instanceof Error ? error.message : 'Failed to create event'} (Real calendar integration coming soon)`);
+      console.error('Failed to create event:', error);
+      toast.error('Failed to create event');
     } finally {
       setIsCreating(false);
     }
@@ -451,40 +459,48 @@ const CalendarSidebarContent = ({ events }: SidebarContentProps) => {
   // Convert to sidebar events and get upcoming ones
   const upcomingEvents = events
     .map(toSidebarEvent)
-    .filter(event => event.start >= new Date()) // Only future events
-    .sort((a, b) => a.start.getTime() - b.start.getTime())
+    .filter(event => {
+      const eventStart = event.start instanceof Date ? event.start : new Date(event.start);
+      return eventStart >= new Date(); // Only future events
+    })
+    .sort((a, b) => {
+      const aStart = a.start instanceof Date ? a.start : new Date(a.start);
+      const bStart = b.start instanceof Date ? b.start : new Date(b.start);
+      return aStart.getTime() - bStart.getTime();
+    })
     .slice(0, 5);
 
-  const formatEventTime = (event: { start: Date; end: Date }) => {
-    const startTime = event.start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
+  const formatEventTime = (event: { start: string | Date; end: string | Date }) => {
+    const startDate = event.start instanceof Date ? event.start : new Date(event.start);
+    const endDate = event.end instanceof Date ? event.end : new Date(event.end);
     
-    // Format date based on how far in the future it is
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
+    const now = new Date();
+    const isToday = startDate.toDateString() === now.toDateString();
+    const isTomorrow = new Date(now.setDate(now.getDate() + 1)).toDateString() === startDate.toDateString();
     
-    const isToday = event.start.getDate() === today.getDate() && 
-                    event.start.getMonth() === today.getMonth() && 
-                    event.start.getFullYear() === today.getFullYear();
-                    
-    const isTomorrow = event.start.getDate() === tomorrow.getDate() && 
-                       event.start.getMonth() === tomorrow.getMonth() && 
-                       event.start.getFullYear() === tomorrow.getFullYear();
+    // Format time (e.g., "3:30 PM")
+    const formatTime = (date: Date) => {
+      return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    };
     
-    let dateStr = '';
-    if (isToday) {
-      dateStr = 'Today';
-    } else if (isTomorrow) {
-      dateStr = 'Tomorrow';
-    } else {
-      dateStr = event.start.toLocaleDateString([], { 
-        weekday: 'short',
-        month: 'short', 
-        day: 'numeric'
-      });
+    // Format date (e.g., "Mon, Jan 1")
+    const formatDate = (date: Date) => {
+      return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    };
+    
+    // If all-day event
+    if (startDate.getHours() === 0 && startDate.getMinutes() === 0 && 
+        endDate.getHours() === 23 && endDate.getMinutes() === 59) {
+      if (isToday) return 'Today (All day)';
+      if (isTomorrow) return 'Tomorrow (All day)';
+      return `${formatDate(startDate)} (All day)`;
     }
     
-    return `${dateStr} at ${startTime}`;
+    // For regular events
+    let timeString = `${formatTime(startDate)} - ${formatTime(endDate)}`;
+    if (isToday) return `Today, ${timeString}`;
+    if (isTomorrow) return `Tomorrow, ${timeString}`;
+    return `${formatDate(startDate)}, ${timeString}`;
   };
 
   return (
@@ -525,12 +541,12 @@ const CalendarSidebarContent = ({ events }: SidebarContentProps) => {
           <ul className="space-y-3 px-1">
             {upcomingEvents.map(event => (
               <li key={event.id} className="text-sm bg-white rounded-md p-2 shadow-sm hover:shadow-md transition-shadow duration-200">
-                <p className="font-medium text-gray-800">{event.title}</p>
+                <p className="font-medium text-gray-800">{event.subject}</p>
                 <p className="text-gray-500 text-xs mt-1">
                   {formatEventTime(event)}
                 </p>
-                {event.description && (
-                  <p className="text-gray-600 text-xs mt-1 truncate">{event.description}</p>
+                {event.body && (
+                  <p className="text-gray-600 text-xs mt-1 truncate">{event.body}</p>
                 )}
               </li>
             ))}

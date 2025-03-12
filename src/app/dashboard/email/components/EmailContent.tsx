@@ -82,6 +82,7 @@ export const EmailContent = ({ body }: EmailContentProps) => {
   
   useEffect(() => {
     console.log('EmailContent received body:', body ? `${body.substring(0, 100)}...` : 'empty/null body');
+    console.log('Body type:', typeof body);
     
     if (!body) {
       console.log('Body is empty or null, showing placeholder');
@@ -109,10 +110,15 @@ export const EmailContent = ({ body }: EmailContentProps) => {
       };
       
       parseBody();
-    } else {
-      // Already parsed content or empty
-      console.log('Using body as-is (already parsed or not raw email format)');
+    } else if (body.trim().startsWith('<') && body.includes('</')) {
+      // Already HTML content
+      console.log('Body appears to be HTML, using as-is');
       setParsedContent(body);
+      setLoading(false);
+    } else {
+      // Plain text content
+      console.log('Using body as plain text');
+      setParsedContent(`<div style="white-space: pre-wrap;">${body}</div>`);
       setLoading(false);
     }
   }, [body]);

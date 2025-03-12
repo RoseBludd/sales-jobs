@@ -8,7 +8,7 @@ import { parseEmailBody } from '../services/emailService';
 interface EmailListItemProps {
   email: Email;
   isSelected?: boolean;
-  onClick: () => void;
+  onSelect: () => void;
   onDelete?: () => void;
   onMove?: (toFolder: 'inbox' | 'sent' | 'draft' | 'trash' | 'spam') => void;
   currentFolder?: string;
@@ -17,7 +17,7 @@ interface EmailListItemProps {
 const EmailListItem = ({ 
   email, 
   isSelected, 
-  onClick, 
+  onSelect, 
   onDelete, 
   onMove,
   currentFolder 
@@ -103,8 +103,8 @@ const EmailListItem = ({
     // Log the click for debugging
     console.log('Email item clicked:', email.id, email.subject);
     
-    // Call the onClick handler
-    onClick();
+    // Call the onSelect handler
+    onSelect();
   };
 
   return (
@@ -119,7 +119,7 @@ const EmailListItem = ({
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          onClick();
+          onSelect();
         }
       }}
     >
@@ -135,7 +135,7 @@ const EmailListItem = ({
         <div className="flex-1 min-w-0">
           <div className="flex justify-between items-center mb-1">
             <p className={`text-sm font-medium truncate ${!email.isRead ? 'font-semibold text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'}`}>
-              {email.fromName || email.from}
+              {email.fromName || email.from || 'Unknown'}
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400 ml-2 whitespace-nowrap">
               {formatDate(email.date)}

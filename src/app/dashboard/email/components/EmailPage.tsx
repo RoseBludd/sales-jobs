@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   ChevronLeft, 
@@ -11,7 +11,8 @@ import {
   RefreshCw, 
   Trash, 
   Send,
-  Inbox
+  Inbox,
+  Bell
 } from 'lucide-react';
 import { Email } from '../types';
 import { useEmailContext } from '../context/EmailProvider';
@@ -21,6 +22,8 @@ import EmailListItem from './EmailListItem';
 import EmailDetail from './EmailDetail';
 import ComposeEmail from './ComposeEmail';
 import SearchBar from './SearchBar';
+import NewEmailsNotification from './NewEmailsNotification';
+import SyncButton from './SyncButton';
 
 interface EmailPageProps {
   folder: 'inbox' | 'sent' | 'draft' | 'trash' | 'spam';
@@ -28,7 +31,6 @@ interface EmailPageProps {
 
 export default function EmailPage({ folder }: EmailPageProps) {
   const router = useRouter();
-  const currentFolder = folder;
   
   // Use the shared context
   const { 
@@ -36,25 +38,37 @@ export default function EmailPage({ folder }: EmailPageProps) {
     showCompose, 
     setShowCompose, 
     setIsLoading,
-    nextCursor,
-    setNextCursor,
-    hasMore,
-    setHasMore
+    selectedEmail,
+    setSelectedEmail,
+    error,
+    setError,
+    totalEmails,
+    currentPage,
+    setCurrentPage,
+    searchQuery,
+    setSearchQuery,
+    refreshEmails,
+    fetchEmailById,
+    updateEmail,
+    removeEmail,
+    addEmail,
+    moveEmail,
+    searchEmails,
+    setCurrentFolder,
+    hasNewEmails,
+    newEmailsCount,
+    syncingEmails,
+    checkForNewEmails
   } = useEmailContext();
   
-  const [filteredEmails, setFilteredEmails] = useState<Email[]>([]);
-  const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [totalEmails, setTotalEmails] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [initialLoad, setInitialLoad] = useState(true);
+  const initialLoad = useRef(true);
   const [isMobileView, setIsMobileView] = useState(false);
   const [perPage] = useState(10); // Number of emails per page
   const [localShowCompose, setLocalShowCompose] = useState(false); // Local state for compose modal
+  const [showNewEmailsNotification, setShowNewEmailsNotification] = useState(false);
 
   // Check for mobile view on mount and window resize
   useEffect(() => {
@@ -72,301 +86,204 @@ export default function EmailPage({ folder }: EmailPageProps) {
     return () => window.removeEventListener('resize', checkMobileView);
   }, []);
 
+  // Set the current folder in the context when the component mounts or folder prop changes
+  useEffect(() => {
+    setCurrentFolder(folder);
+  }, [folder, setCurrentFolder]);
+
+  // Show notification when new emails are detected
+  useEffect(() => {
+    if (hasNewEmails) {
+      setShowNewEmailsNotification(true);
+      
+      // Hide notification after 5 seconds
+      const timer = setTimeout(() => {
+        setShowNewEmailsNotification(false);
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [hasNewEmails, newEmailsCount]);
+
   // Memoized fetchEmails function to prevent unnecessary re-renders
-  const fetchEmails = useCallback(async (page: number = 1, resetCursor: boolean = false) => {
+  const fetchEmails = useCallback(async (page: number = 1, forceRefresh: boolean = false) => {
     if (page < 1) return;
     
     try {
       setLoading(true);
       setIsLoading(true);
-      setError('');
       
-      // Convert folder name to match API expectations
-      const apiFolder = currentFolder.toUpperCase();
+      // Set the current page in the context
+      setCurrentPage(page);
       
-      // Reset cursor when changing pages backward or when explicitly requested
-      const cursor = (resetCursor || page === 1) ? null : nextCursor;
+      // The actual email fetching is now handled by the context
+      await refreshEmails(forceRefresh);
       
-      console.log(`Fetching emails: folder=${apiFolder}, page=${page}, perPage=${perPage}, query=${searchQuery || 'none'}, cursor=${cursor || 'none'}`);
+      // Calculate total pages based on total emails and per page
+      setTotalPages(Math.ceil(totalEmails / perPage));
       
-      // Make API call to fetch emails using the updated API endpoint with cursor-based pagination
-      const url = `/api/email?folder=${apiFolder}&page=${page}&limit=${perPage}${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}${searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : ''}`;
-      console.log(`API URL: ${url}`);
-      
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        let errorData;
-        try {
-          errorData = JSON.parse(errorText);
-        } catch (e) {
-          errorData = { error: errorText || 'Unknown error' };
-        }
-        
-        // Check if errorData is empty object and provide a default message
-        if (errorData && Object.keys(errorData).length === 0) {
-          errorData = { error: `Server returned ${response.status} ${response.statusText}` };
-        }
-        
-        throw new Error(errorData.error || 'Failed to fetch emails');
-      }
-      
-      const data = await response.json();
-      console.log(`Received ${data.emails?.length || 0} emails (page ${data.page} of ${data.pages || data.totalPages})`);
-      
-      // Store the next cursor for pagination
-      setNextCursor(data.next_cursor || null);
-      setHasMore(data.has_more || false);
-      
-      // Transform API response to match our Email interface
-      const transformedEmails: Email[] = data.emails || [];
-      
-      // Dispatch event to update context
-      const event = new CustomEvent('emailsUpdated', {
-        detail: { emails: transformedEmails }
-      });
-      window.dispatchEvent(event);
-      
-      setFilteredEmails(transformedEmails);
-      
-      // Update pagination information from response
-      setCurrentPage(data.page || page);
-      setTotalPages(data.pages || data.totalPages || 1);
-      setTotalEmails(data.total || 0);
+      // Hide new emails notification after refresh
+      setShowNewEmailsNotification(false);
       
     } catch (err) {
       console.error('Error fetching emails:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load emails. Please try again later.');
-      
-      // Dispatch event to update context even on error
-      const event = new CustomEvent('emailsUpdated', {
-        detail: { emails: [] }
-      });
-      window.dispatchEvent(event);
     } finally {
       setLoading(false);
       setIsLoading(false);
-      setInitialLoad(false);
+      initialLoad.current = false;
     }
-  }, [currentFolder, perPage, searchQuery, setIsLoading, nextCursor, setNextCursor, setHasMore]);
+  }, [refreshEmails, setCurrentPage, setIsLoading, totalEmails, perPage]);
 
-  // Fetch emails when currentFolder changes
+  // Fetch emails when component mounts
   useEffect(() => {
-    console.log(`Folder changed to: ${currentFolder}`);
-    // Reset page to 1 and fetch emails when folder changes
-    setCurrentPage(1);
-    setNextCursor(null);
-    fetchEmails(1, true);
-  }, [currentFolder, fetchEmails, setNextCursor]);
-
-  // Apply search filter
-  useEffect(() => {
-    if (searchQuery.trim() === '') {
-      // Just refresh the current page when search is cleared
-      fetchEmails(currentPage, true);
-    } else {
-      // Always go to page 1 for new searches
-      setCurrentPage(1);
-      setNextCursor(null);
+    if (initialLoad.current) {
+      initialLoad.current = false;
       fetchEmails(1, true);
     }
-  }, [searchQuery, fetchEmails, currentPage, setNextCursor]);
-  
-  // Listen for showComposeModal event
-  useEffect(() => {
-    const handleShowComposeModal = () => {
-      console.log('showComposeModal event received in EmailPage');
-      setShowCompose(true);
-      setLocalShowCompose(true);
-    };
-    
-    window.addEventListener('showComposeModal', handleShowComposeModal);
-    
-    return () => {
-      window.removeEventListener('showComposeModal', handleShowComposeModal);
-    };
-  }, [setShowCompose]);
-  
+  }, [fetchEmails]);
+
+  // Handle page change
   const handlePageChange = (newPage: number) => {
-    if (newPage < 1 || newPage > totalPages) return;
+    if (newPage < 1 || newPage > totalPages || newPage === currentPage) return;
     
-    // For cursor-based pagination, we can only go forward with the cursor
-    // Going backward requires resetting to page 1 and navigating forward
-    if (newPage < currentPage) {
-      setCurrentPage(1);
-      fetchEmails(1, true);
-      return;
-    }
-    
-    console.log(`Changing to page ${newPage}`);
-    setCurrentPage(newPage);
     fetchEmails(newPage);
-    
-    // Scroll to top of email list
-    const emailListElement = document.getElementById('email-list');
-    if (emailListElement) {
-      emailListElement.scrollTop = 0;
-    }
   };
-  
+
+  // Handle email selection
   const handleEmailSelect = async (email: Email) => {
     try {
-      setSelectedEmail(email);
+      setLoading(true);
       
-      // If email is not read, mark it as read
-      if (!email.isRead && email.itemId) {
-        const response = await fetch('/api/email', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            action: 'markAsRead',
-            itemId: email.itemId,
-            folder: currentFolder.toUpperCase()
-          }),
+      // If the email is already selected, deselect it
+      if (selectedEmail && selectedEmail.id === email.id) {
+        setSelectedEmail(null);
+        return;
+      }
+      
+      console.log(`Selecting email with ID: ${email.id}`);
+      
+      // Get the full email details
+      try {
+        const fullEmail = await fetchEmailById(String(email.id));
+        
+        console.log('Fetched full email details:', {
+          id: fullEmail.id,
+          subject: fullEmail.subject,
+          bodyLength: fullEmail.body ? fullEmail.body.length : 0,
+          bodyPreview: fullEmail.body ? fullEmail.body.substring(0, 50) + '...' : 'No body'
+        });
+        
+        // Mark as read if not already
+        if (!fullEmail.isRead) {
+          const updatedEmail = { ...fullEmail, isRead: true };
+          updateEmail(updatedEmail);
+        }
+        
+        // Set as selected email
+        setSelectedEmail(fullEmail);
+      } catch (fetchError) {
+        console.error('Error fetching email details:', fetchError);
+        setError(fetchError instanceof Error ? fetchError.message : 'Failed to fetch email details');
+        
+        // Still select the email with limited details
+        setSelectedEmail({
+          ...email,
+          body: 'Error loading email content. Please try again.'
+        });
+      }
+    } catch (err) {
+      console.error('Error selecting email:', err);
+      setError(err instanceof Error ? err.message : 'Failed to select email');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle manual sync
+  const handleSync = async () => {
+    try {
+      await checkForNewEmails();
+    } catch (err) {
+      console.error('Error syncing emails:', err);
+    }
+  };
+
+  // Handle email deletion
+  const handleDeleteEmail = async (email: Email) => {
+    try {
+      setIsSubmitting(true);
+      
+      // If this is already in the trash, permanently delete it
+      if (folder === 'trash') {
+        // Call the API to permanently delete the email
+        const response = await fetch(`/api/emails/${email.id}?hardDelete=true`, {
+          method: 'DELETE',
         });
         
         if (!response.ok) {
-          const errorText = await response.text();
-          let errorData;
-          try {
-            errorData = JSON.parse(errorText);
-          } catch (e) {
-            errorData = { error: errorText || 'Unknown error' };
-          }
-          
-          // Check if errorData is empty object and provide a default message
-          if (errorData && Object.keys(errorData).length === 0) {
-            errorData = { error: `Server returned ${response.status} ${response.statusText}` };
-          }
-          
-          console.error('Error marking email as read:', errorData);
-          // Don't throw here, just log the error and continue
-          // This prevents the "Not Found" error from breaking the UI
-        } else {
-          // Update filtered emails
-          setFilteredEmails(prevEmails => 
-            prevEmails.map(e => e.id === email.id ? { ...e, isRead: true } : e)
-          );
-          
-          // Update the selected email
-          setSelectedEmail({ ...email, isRead: true });
-          
-          // Dispatch event to update emails in context
-          const updatedEmails = emails.map(e => 
-            e.id === email.id ? { ...e, isRead: true } : e
-          );
-          
-          const event = new CustomEvent('emailsUpdated', {
-            detail: { emails: updatedEmails }
-          });
-          window.dispatchEvent(event);
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to delete email');
+        }
+        
+        // Remove from context
+        removeEmail(String(email.id));
+        
+        // If this was the selected email, deselect it
+        if (selectedEmail && selectedEmail.id === email.id) {
+          setSelectedEmail(null);
+        }
+      } else {
+        // Move to trash
+        await moveEmail(String(email.id), 'trash');
+        
+        // If this was the selected email, deselect it
+        if (selectedEmail && selectedEmail.id === email.id) {
+          setSelectedEmail(null);
         }
       }
     } catch (err) {
-      console.error('Error handling email selection:', err);
-      // Don't set error state here to prevent UI disruption
-    }
-  };
-  
-  const handleDeleteEmail = async (email: Email) => {
-    try {
-      if (!email.itemId) {
-        throw new Error('Email ID is missing');
-      }
-      
-      const response = await fetch('/api/email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'delete',
-          itemId: email.itemId,
-          folder: currentFolder.toUpperCase()
-        }),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to delete email');
-      }
-      
-      // Update UI to remove the deleted email
-      setFilteredEmails(prevEmails => prevEmails.filter(e => e.id !== email.id));
-      
-      // If the deleted email was selected, clear selection
-      if (selectedEmail && selectedEmail.id === email.id) {
-        setSelectedEmail(null);
-      }
-      
-      // Refetch emails to update pagination if needed
-      fetchEmails(currentPage);
-      
-    } catch (err) {
       console.error('Error deleting email:', err);
-      alert(err instanceof Error ? err.message : 'Failed to delete email');
+      setError(err instanceof Error ? err.message : 'Failed to delete email');
+    } finally {
+      setIsSubmitting(false);
     }
   };
-  
+
+  // Handle moving email to a different folder
   const handleMoveEmail = async (email: Email, toFolder: 'inbox' | 'sent' | 'draft' | 'trash' | 'spam') => {
     try {
-      if (!email.itemId) {
-        throw new Error('Email ID is missing');
-      }
+      setIsSubmitting(true);
       
-      const response = await fetch('/api/email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'move',
-          itemId: email.itemId,
-          fromFolder: currentFolder.toUpperCase(),
-          toFolder: toFolder.toUpperCase()
-        }),
-      });
+      // Move the email using the context
+      await moveEmail(String(email.id), toFolder);
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to move email');
-      }
-      
-      // Update UI to remove the moved email if still in the same folder
-      setFilteredEmails(prevEmails => prevEmails.filter(e => e.id !== email.id));
-      
-      // If the moved email was selected, clear selection
+      // If this was the selected email, deselect it
       if (selectedEmail && selectedEmail.id === email.id) {
         setSelectedEmail(null);
       }
-      
-      // Refetch emails to update pagination
-      fetchEmails(currentPage);
-      
     } catch (err) {
       console.error('Error moving email:', err);
-      alert(err instanceof Error ? err.message : 'Failed to move email');
+      setError(err instanceof Error ? err.message : 'Failed to move email');
+    } finally {
+      setIsSubmitting(false);
     }
   };
-  
+
+  // Handle sending a new email
   const handleSendEmail = async (to: string, subject: string, body: string): Promise<boolean> => {
     try {
       setIsSubmitting(true);
       
-      const response = await fetch('/api/email', {
+      // Call the API to send the email
+      const response = await fetch('/api/emails', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          action: 'send',
+          to: to.split(/[,;]/).map(email => email.trim()).filter(Boolean),
           subject,
-          body,
-          to: to.split(',').map(email => email.trim()),
-          body_type: 'HTML'
+          body
         }),
       });
       
@@ -375,309 +292,206 @@ export default function EmailPage({ folder }: EmailPageProps) {
         throw new Error(errorData.error || 'Failed to send email');
       }
       
-      // Close compose window and refresh emails
-      setShowCompose(false);
+      const result = await response.json();
       
-      // If we're in the sent folder, refresh to show the new email
-      if (currentFolder === 'sent') {
-        fetchEmails(1, true);
+      if (result.success) {
+        // Create a new email object for the sent email
+        const sentEmail: Email = {
+          id: result.emailId || Math.random(),
+          folder: 'sent',
+          from: 'me@example.com', // This will be replaced by the actual sender
+          fromName: 'Me',
+          to,
+          subject,
+          body,
+          date: new Date().toISOString(),
+          isRead: true,
+          isStarred: false
+        };
+        
+        // Add to context
+        addEmail(sentEmail);
+        
+        // Close compose modal
+        setShowCompose(false);
+        
+        return true;
+      } else {
+        throw new Error(result.message || 'Failed to send email');
       }
-      
-      return true;
     } catch (err) {
       console.error('Error sending email:', err);
-      alert(err instanceof Error ? err.message : 'Failed to send email');
+      setError(err instanceof Error ? err.message : 'Failed to send email');
       return false;
     } finally {
       setIsSubmitting(false);
     }
   };
-  
+
+  // Handle search
   const handleSearch = (query: string) => {
     setSearchQuery(query);
+    
+    if (query.trim()) {
+      searchEmails(query);
+    } else {
+      // If search query is empty, refresh emails
+      fetchEmails(1, true);
+    }
   };
-  
+
+  // Handle retry
   const handleRetry = () => {
     fetchEmails(currentPage, true);
   };
-  
+
+  // Handle compose click
   const handleComposeClick = () => {
-    console.log('handleComposeClick called');
-    setLocalShowCompose(true);
+    setShowCompose(true);
   };
 
-  // Render pagination controls
+  // Render pagination
   const renderPagination = () => {
-    if (totalEmails === 0) return null;
-    
-    // For cursor-based pagination, we can only go forward or back to the beginning
     return (
-      <div className="flex items-center justify-between px-4 py-2 bg-white border-t border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-        <div className="flex items-center space-x-2">
-          <span className="text-sm text-gray-700 dark:text-gray-300">
-            {loading ? (
-              <span className="flex items-center">
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Loading...
-              </span>
-            ) : (
-              `Showing ${filteredEmails.length} of ${totalEmails} emails`
-            )}
-          </span>
-        </div>
+      <div className="flex items-center justify-between mt-4">
+        <button
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage <= 1}
+          className={`px-3 py-1 rounded ${
+            currentPage <= 1
+              ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+              : 'bg-blue-500 text-white hover:bg-blue-600'
+          }`}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
         
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={() => handlePageChange(1)}
-            disabled={currentPage === 1 || loading}
-            className={`p-2 rounded-md ${
-              currentPage === 1 || loading
-                ? 'text-gray-400 cursor-not-allowed'
-                : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
-            }`}
-            aria-label="First page"
-          >
-            <ChevronLeft className="w-5 h-5" />
-            <span className="sr-only">First page</span>
-          </button>
-          
-          <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            Page {currentPage} {totalPages > 0 ? `of ${totalPages}` : ''}
-          </div>
-          
-          <button
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={!hasMore || loading}
-            className={`p-2 rounded-md ${
-              !hasMore || loading
-                ? 'text-gray-400 cursor-not-allowed'
-                : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
-            }`}
-            aria-label="Next page"
-          >
-            <ChevronRight className="w-5 h-5" />
-            <span className="sr-only">Next page</span>
-          </button>
-        </div>
+        <span className="text-sm">
+          Page {currentPage} of {totalPages}
+        </span>
+        
+        <button
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage >= totalPages}
+          className={`px-3 py-1 rounded ${
+            currentPage >= totalPages
+              ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+              : 'bg-blue-500 text-white hover:bg-blue-600'
+          }`}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
       </div>
     );
   };
 
-  if (initialLoad) {
-    return (
-      <div className="h-full flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 size={40} className="animate-spin mx-auto mb-4 text-blue-500" />
-          <p className="text-gray-600 dark:text-gray-400">Loading your emails...</p>
-        </div>
-      </div>
-    );
-  }
-  
+  // Render the email list
   return (
-    <div className="h-full flex flex-col">
-      {/* Current folder and search */}
-      <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-        <div className="flex items-center">
-          <h1 className="text-xl font-semibold capitalize text-gray-900 dark:text-gray-200">{currentFolder}</h1>
-          <p className="ml-2 text-sm text-gray-500">
-            {loading ? 'Loading...' : `${totalEmails} emails`}
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <SearchBar onSearch={handleSearch} />
-        </div>
-      </div>
-      
-      {/* Email content area */}
-      <div className="flex-1 overflow-hidden flex flex-col">
-        {/* Main content with email list and detail view */}
-        <div className="flex-1 overflow-hidden flex">
-          {/* Email list */}
-          <div className={`${selectedEmail ? 'hidden md:block md:w-1/3 lg:w-2/5' : 'w-full'} h-full overflow-y-auto border-r border-gray-200`} id="email-list">
-            {error && (
-              <div className="p-4 bg-red-100 text-red-800 flex items-center">
-                <AlertCircle size={18} className="mr-2" />
-                <p>{error}</p>
-                <button 
-                  className="ml-auto text-sm text-blue-600 hover:underline"
-                  onClick={handleRetry}
-                >
-                  Retry
-                </button>
-              </div>
-            )}
-            
-            {loading && (
-              <div className="flex items-center justify-center h-32">
-                <Loader2 size={24} className="animate-spin text-blue-500" />
-              </div>
-            )}
-            
-            {!loading && filteredEmails.length === 0 && !error ? (
-              <div className="p-8 text-center text-gray-500">
-                <p>No emails found in this folder.</p>
-              </div>
-            ) : (
-              <ul>
-                {filteredEmails.map(email => (
-                  <EmailListItem 
-                    key={email.id} 
-                    email={email} 
-                    isSelected={selectedEmail?.id === email.id}
-                    onClick={() => handleEmailSelect(email)}
-                    onDelete={() => handleDeleteEmail(email)}
-                    onMove={(toFolder) => handleMoveEmail(email, toFolder)}
-                  />
-                ))}
-              </ul>
-            )}
-          </div>
-          
-          {/* Email detail view */}
-          {selectedEmail ? (
-            <div className="w-full md:w-2/3 lg:w-3/5 h-full overflow-y-auto">
-              <EmailDetail 
-                email={selectedEmail}
-                onBack={() => setSelectedEmail(null)}
-                onDelete={() => handleDeleteEmail(selectedEmail)}
-                onMove={(toFolder) => handleMoveEmail(selectedEmail, toFolder)}
-                isMobileView={isMobileView}
-                currentFolder={currentFolder}
-              />
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b">
+        <h1 className="text-xl font-semibold capitalize">
+          {folder === 'inbox' ? (
+            <div className="flex items-center">
+              <Inbox className="h-5 w-5 mr-2" />
+              Inbox
             </div>
           ) : (
-            <div className="hidden md:flex md:flex-col md:justify-center md:items-center h-full w-full md:w-2/3 lg:w-3/5">
-              <div className="text-center text-gray-500 dark:text-gray-400">
-                <Inbox className="h-16 w-16 mb-4 opacity-50 mx-auto" />
-                <p className="text-lg">Select an email to view</p>
-                <p className="text-sm mt-2">No email selected</p>
-              </div>
-            </div>
+            folder
           )}
-        </div>
+        </h1>
         
-        {/* Pagination - moved outside the scrollable area */}
-        <div className="p-4 border-t border-gray-200 bg-white dark:bg-gray-800 sticky bottom-0 z-10 shadow-md">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="text-sm text-gray-500 order-2 sm:order-1">
-              Showing {filteredEmails.length > 0 ? `${((currentPage - 1) * 10) + 1}-${Math.min(currentPage * 10, totalEmails)}` : '0'} of {totalEmails} {totalEmails === 1 ? 'email' : 'emails'}
-            </div>
-            
-            <div className="flex items-center space-x-1 order-1 sm:order-2">
-              <button
-                onClick={() => handlePageChange(1)}
-                disabled={currentPage === 1 || loading || totalPages <= 1}
-                className={`p-2 rounded-md flex items-center justify-center ${
-                  currentPage === 1 || loading || totalPages <= 1
-                    ? 'text-gray-400 cursor-not-allowed'
-                    : 'text-blue-600 hover:bg-blue-50'
-                }`}
-                aria-label="First page"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="11 17 6 12 11 7"></polyline>
-                  <polyline points="18 17 13 12 18 7"></polyline>
-                </svg>
-              </button>
-              
-              <button
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1 || loading || totalPages <= 1}
-                className={`p-2 rounded-md flex items-center justify-center ${
-                  currentPage === 1 || loading || totalPages <= 1
-                    ? 'text-gray-400 cursor-not-allowed'
-                    : 'text-blue-600 hover:bg-blue-50'
-                }`}
-                aria-label="Previous page"
-              >
-                <ChevronLeft size={16} />
-              </button>
-              
-              {/* Page numbers */}
-              <div className="hidden sm:flex items-center">
-                {totalPages > 0 && Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
-                  // Calculate which page numbers to show
-                  let pageNum;
-                  if (totalPages <= 5) {
-                    // If 5 or fewer pages, show all
-                    pageNum = i + 1;
-                  } else if (currentPage <= 3) {
-                    // If near the start, show first 5 pages
-                    pageNum = i + 1;
-                  } else if (currentPage >= totalPages - 2) {
-                    // If near the end, show last 5 pages
-                    pageNum = totalPages - 4 + i;
-                  } else {
-                    // Otherwise show current page and 2 on each side
-                    pageNum = currentPage - 2 + i;
-                  }
-                  
-                  return (
-                    <button
-                      key={pageNum}
-                      onClick={() => handlePageChange(pageNum)}
-                      disabled={loading || totalPages <= 1}
-                      className={`w-8 h-8 flex items-center justify-center rounded-md mx-1 ${
-                        currentPage === pageNum
-                          ? 'bg-blue-600 text-white'
-                          : 'text-gray-700 hover:bg-blue-50'
-                      }`}
-                    >
-                      {pageNum}
-                    </button>
-                  );
-                })}
-              </div>
-              
-              {/* Mobile page indicator */}
-              <div className="sm:hidden px-2 text-sm">
-                {currentPage} / {Math.max(1, totalPages)}
-              </div>
-              
-              <button
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages || loading || totalPages <= 1}
-                className={`p-2 rounded-md flex items-center justify-center ${
-                  currentPage === totalPages || loading || totalPages <= 1
-                    ? 'text-gray-400 cursor-not-allowed'
-                    : 'text-blue-600 hover:bg-blue-50'
-                }`}
-                aria-label="Next page"
-              >
-                <ChevronRight size={16} />
-              </button>
-              
-              <button
-                onClick={() => handlePageChange(totalPages)}
-                disabled={currentPage === totalPages || loading || totalPages <= 1}
-                className={`p-2 rounded-md flex items-center justify-center ${
-                  currentPage === totalPages || loading || totalPages <= 1
-                    ? 'text-gray-400 cursor-not-allowed'
-                    : 'text-blue-600 hover:bg-blue-50'
-                }`}
-                aria-label="Last page"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="13 17 18 12 13 7"></polyline>
-                  <polyline points="6 17 11 12 6 7"></polyline>
-                </svg>
-              </button>
-            </div>
-          </div>
+        <div className="flex items-center space-x-2">
+          {/* Sync button */}
+          <SyncButton onSync={handleSync} isSyncing={syncingEmails} />
+          
+          {/* Search bar */}
+          <SearchBar onSearch={handleSearch} />
+          
+          {/* Compose button */}
+          <button
+            onClick={handleComposeClick}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+          >
+            Compose
+          </button>
         </div>
       </div>
       
-      {/* Compose email modal */}
-      {/* Debug log for showCompose state */}
-      {(() => { console.log('showCompose state in EmailPage:', showCompose, 'localShowCompose:', localShowCompose); return null; })()}
-      {(showCompose || localShowCompose) && (
-        <ComposeEmail 
-          onClose={() => {
-            console.log('Closing compose modal');
-            setShowCompose(false);
-            setLocalShowCompose(false);
-          }}
+      {/* New emails notification */}
+      <NewEmailsNotification 
+        count={newEmailsCount}
+        onRefresh={() => fetchEmails(1, true)}
+        visible={showNewEmailsNotification}
+      />
+      
+      {/* Error message */}
+      {error && (
+        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 flex items-center justify-between">
+          <div className="flex items-center">
+            <AlertCircle className="h-5 w-5 mr-2" />
+            <span>{error}</span>
+          </div>
+          <button
+            onClick={handleRetry}
+            className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-sm"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+      
+      {/* Loading indicator */}
+      {loading && (
+        <div className="flex items-center justify-center p-4">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+        </div>
+      )}
+      
+      {/* Email content */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Email list */}
+        <div className={`${selectedEmail && !isMobileView ? 'w-1/3' : 'w-full'} overflow-y-auto border-r`}>
+          {emails.length === 0 && !loading ? (
+            <div className="flex flex-col items-center justify-center h-64">
+              <p className="text-gray-500">No emails found</p>
+            </div>
+          ) : (
+            <div>
+              {emails.map((email) => (
+                <EmailListItem
+                  key={email.id}
+                  email={email}
+                  isSelected={selectedEmail?.id === email.id}
+                  onSelect={() => handleEmailSelect(email)}
+                  onDelete={() => handleDeleteEmail(email)}
+                  onMove={(toFolder) => handleMoveEmail(email, toFolder)}
+                />
+              ))}
+            </div>
+          )}
+          
+          {/* Pagination */}
+          {emails.length > 0 && renderPagination()}
+        </div>
+        
+        {/* Email detail */}
+        {selectedEmail && (
+          <div className={`${isMobileView ? 'w-full absolute inset-0 bg-white z-10' : 'w-2/3'} overflow-y-auto`}>
+            <EmailDetail
+              email={selectedEmail}
+              onClose={() => setSelectedEmail(null)}
+              onDelete={() => selectedEmail && handleDeleteEmail(selectedEmail)}
+              onMove={(toFolder) => selectedEmail && handleMoveEmail(selectedEmail, toFolder)}
+            />
+          </div>
+        )}
+      </div>
+      
+      {/* Compose modal */}
+      {showCompose && (
+        <ComposeEmail
+          onClose={() => setShowCompose(false)}
           onSend={handleSendEmail}
           isSubmitting={isSubmitting}
         />

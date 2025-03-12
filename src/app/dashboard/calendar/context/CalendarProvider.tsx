@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback } from 'react';
-import { CalendarEvent } from '@/app/api/calendar/types';
+import { CalendarEvent } from '../services/calendarService';
 
 // Create the calendar context
 export const CalendarContext = createContext<{
@@ -15,6 +15,8 @@ export const CalendarContext = createContext<{
   setSelectedEvent: (event: CalendarEvent | null) => void;
   error: string | null;
   setError: (error: string | null) => void;
+  refreshNeeded: boolean;
+  setRefreshNeeded: (needed: boolean) => void;
 }>({
   events: [],
   showCreateEventModal: false,
@@ -26,6 +28,8 @@ export const CalendarContext = createContext<{
   setSelectedEvent: () => {},
   error: null,
   setError: () => {},
+  refreshNeeded: false,
+  setRefreshNeeded: () => {},
 });
 
 // Custom hook to use the calendar context
@@ -41,6 +45,7 @@ export const CalendarProvider = ({ children }: CalendarProviderProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [refreshNeeded, setRefreshNeeded] = useState(false);
 
   // Function to toggle create event modal visibility
   const handleSetShowCreateEventModal = (show: boolean) => {
@@ -66,8 +71,9 @@ export const CalendarProvider = ({ children }: CalendarProviderProps) => {
     
     // Add listener for calendar refresh events
     const handleCalendarRefresh = () => {
-      console.log('calendar-refresh event received');
-      // You could add logic here to refresh the calendar data if needed
+      console.log('calendar-refresh event received in context');
+      // Set refreshNeeded flag to true so components can refresh their data
+      setRefreshNeeded(true);
     };
     
     window.addEventListener('calendar-refresh', handleCalendarRefresh);
@@ -91,6 +97,8 @@ export const CalendarProvider = ({ children }: CalendarProviderProps) => {
         setSelectedEvent,
         error,
         setError,
+        refreshNeeded,
+        setRefreshNeeded,
       }}
     >
       {children}

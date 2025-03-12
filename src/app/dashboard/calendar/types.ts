@@ -1,12 +1,7 @@
+import { CalendarEvent as ServiceCalendarEvent } from './services/calendarService';
+
 // Define the CalendarEvent interface that matches the one in the calendar page
-export interface CalendarEvent {
-  Id: string;
-  Subject: string;
-  Start: string;
-  End: string;
-  Description?: string;
-  Location?: string;
-}
+export interface CalendarEvent extends ServiceCalendarEvent {}
 
 // Define the SidebarEvent interface for the sidebar component
 export interface SidebarEvent {

@@ -22,20 +22,20 @@ interface Email {
 
 interface EmailDetailProps {
   email: Email;
-  onBack: () => void;
+  onClose: () => void;
   onDelete: () => void;
   onMove: (folder: 'inbox' | 'sent' | 'draft' | 'trash' | 'spam') => void;
   isMobileView?: boolean;
-  currentFolder: 'inbox' | 'sent' | 'draft' | 'trash' | 'spam';
+  currentFolder?: 'inbox' | 'sent' | 'draft' | 'trash' | 'spam';
 }
 
 const EmailDetail = ({ 
   email, 
-  onBack, 
+  onClose, 
   onDelete,
   onMove,
   isMobileView = false,
-  currentFolder
+  currentFolder = 'inbox'
 }: EmailDetailProps) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -45,7 +45,9 @@ const EmailDetail = ({
     console.log('EmailDetail rendering with:', { 
       emailId: email?.id, 
       subject: email?.subject, 
-      currentFolder 
+      currentFolder,
+      bodyLength: email?.body ? email.body.length : 0,
+      bodyPreview: email?.body ? email.body.substring(0, 50) + '...' : 'No body'
     });
   }, [email, currentFolder]);
   
@@ -83,13 +85,16 @@ const EmailDetail = ({
     );
   }
   
+  // Check if email body is available
+  const hasBody = Boolean(email.body && email.body.trim().length > 0);
+  
   return (
     <div className="h-full flex flex-col bg-white dark:bg-gray-800">
       {/* Email header */}
       <div className="p-4 border-b dark:border-gray-700 flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800 z-10 shadow-sm">
         <div className="flex items-center">
           <button 
-            onClick={onBack} 
+            onClick={onClose} 
             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-500 dark:text-gray-400 mr-2 md:mr-4"
             aria-label="Go back"
           >
@@ -159,12 +164,12 @@ const EmailDetail = ({
           <div className="flex items-start justify-between">
             <div className="flex items-center">
               <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-600 dark:text-blue-300 mr-3 flex-shrink-0">
-                <span className="text-lg font-medium">{(email.fromName || email.from).charAt(0).toUpperCase()}</span>
+                <span className="text-lg font-medium">{((email.fromName || email.from || 'U').charAt(0)).toUpperCase()}</span>
               </div>
               <div>
-                <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">{email.fromName || email.from}</h3>
+                <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">{email.fromName || email.from || 'Unknown'}</h3>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  To: {email.to}
+                  To: {email.to || 'No recipients'}
                 </p>
               </div>
             </div>
@@ -181,8 +186,12 @@ const EmailDetail = ({
           <div className="flex justify-center items-center h-full">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-gray-100"></div>
           </div>
-        ) : (
+        ) : hasBody ? (
           <EmailContent body={email.body} />
+        ) : (
+          <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+            <p>No content available for this email.</p>
+          </div>
         )}
       </div>
       

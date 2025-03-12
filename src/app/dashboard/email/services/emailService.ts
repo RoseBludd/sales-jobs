@@ -1,155 +1,400 @@
 /**
- * Email service for handling MIME parsing and other email-related functionality
- * Using server-side API for parsing instead of direct mailparser usage
+ * Email service for handling AWS WorkMail EWS integration
  */
 
-import { EmailAttachment } from '../types';
-// The mime package has built-in types
-import mime from 'mime';
+import { Email, EmailAttachment } from '../types';
 
 /**
  * Parse a raw email body to extract HTML or text content
- * Using server API for parsing to avoid Node.js dependencies on client
  */
-export async function parseEmailBody(rawEmail: string): Promise<string> {
+export function parseEmailBody(body: string): string {
+  // Simple parsing for HTML content
+  if (!body) return '';
+  
+  console.log('Parsing email body, length:', body.length);
+  
+  // If it's already HTML, return it as is
+  if (body.trim().startsWith('<') && body.includes('</')) {
+    console.log('Body appears to be HTML already');
+    return body;
+  }
+  
+  // Check if it's a MIME message
+  if (body.includes('Content-Type:') && body.includes('MIME-Version:')) {
+    console.log('Body appears to be a MIME message, extracting content');
+    
+    // Try to extract HTML part
+    const htmlMatch = body.match(/Content-Type: text\/html[\s\S]*?(?:\r?\n\r?\n)([\s\S]*?)(?:\r?\n\r?\n--)/i);
+    if (htmlMatch && htmlMatch[1]) {
+      console.log('Found HTML content in MIME message');
+      return htmlMatch[1].trim();
+    }
+    
+    // Try to extract plain text part
+    const textMatch = body.match(/Content-Type: text\/plain[\s\S]*?(?:\r?\n\r?\n)([\s\S]*?)(?:\r?\n\r?\n--)/i);
+    if (textMatch && textMatch[1]) {
+      console.log('Found plain text content in MIME message');
+      return `<div style="white-space: pre-wrap;">${textMatch[1].trim()}</div>`;
+    }
+  }
+  
+  // Convert plain text to HTML
+  console.log('Treating as plain text');
+  return `<div style="white-space: pre-wrap;">${body}</div>`;
+}
+
+/**
+ * Helper function to extract sender name and email from email data
+ */
+function extractSenderInfo(fromName: string = '', fromEmail: string = ''): { name: string, email: string } {
+  // If fromName is provided, use it
+  if (fromName) {
+    return { name: fromName, email: fromEmail };
+  }
+  
+  // If no fromName but we have fromEmail
+  if (fromEmail) {
+    // Check if the from field has a format like "John Doe <john.doe@example.com>"
+    const nameMatch = fromEmail.match(/^([^<]+)<([^>]+)>$/);
+    if (nameMatch && nameMatch[1]) {
+      return { 
+        name: nameMatch[1].trim(), 
+        email: nameMatch[2].trim() 
+      };
+    }
+    
+    // Just use the email address as the name
+    return { 
+      name: fromEmail, 
+      email: fromEmail 
+    };
+  }
+  
+  // Fallback
+  return { name: 'Unknown', email: fromEmail };
+}
+
+/**
+ * Fetch emails from a specific folder
+ */
+export async function fetchEmails(
+  folder: string = 'inbox',
+  page: number = 1,
+  pageSize: number = 50,
+  searchQuery?: string,
+  sync: boolean = false
+): Promise<{
+  emails: Email[];
+  total: number;
+  page: number;
+  pageSize: number;
+  fromCache: boolean;
+}> {
   try {
-    // For client-side, we'll use a server API endpoint to parse the email
-    // This avoids importing node-specific modules on the client
-    const response = await fetch('/api/email/parse', {
+    // Map folder names to match API expectations
+    const folderMap: Record<string, string> = {
+      'inbox': 'inbox',
+      'sent': 'sent',
+      'draft': 'drafts',
+      'trash': 'deleted',
+      'spam': 'junk'
+    };
+
+    const apiFolder = folderMap[folder.toLowerCase()] || 'inbox';
+    
+    // Build the API URL
+    let url = `/api/emails?folder=${apiFolder}&page=${page}&pageSize=${pageSize}`;
+    if (sync) {
+      url += '&sync=true';
+    }
+    
+    if (searchQuery) {
+      url = `/api/emails/search`;
+    }
+
+    // Make the API request
+    const response = searchQuery 
+      ? await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            query: searchQuery,
+            folderIds: [apiFolder],
+            page,
+            pageSize
+          }),
+        })
+      : await fetch(url);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to fetch emails');
+    }
+
+    const data = await response.json();
+    
+    // Transform the API response to match our Email interface
+    const emails: Email[] = data.emails.map((email: any) => {
+      // Extract sender info
+      const senderInfo = extractSenderInfo(email.fromName, email.from);
+      
+      // Log the email data for debugging
+      console.log('Email data:', {
+        id: email.id,
+        from: email.from,
+        fromName: email.fromName,
+        subject: email.subject,
+        extracted: senderInfo
+      });
+      
+      return {
+        id: email.id,
+        folder: folder as 'inbox' | 'sent' | 'draft' | 'trash' | 'spam',
+        from: senderInfo.email,
+        fromName: senderInfo.name,
+        to: Array.isArray(email.to) ? email.to.join(', ') : (email.to || ''),
+        subject: email.subject || '(No Subject)',
+        body: email.body || '',
+        date: email.receivedDate || new Date().toISOString(),
+        isRead: email.isRead || false,
+        isStarred: false, // EWS doesn't have a direct "starred" concept
+        attachments: email.hasAttachments ? [] : undefined, // We'll load attachments separately when needed
+        itemId: email.id // Store the original EWS item ID
+      };
+    });
+
+    return {
+      emails,
+      total: data.total || emails.length,
+      page: data.page || page,
+      pageSize: data.pageSize || pageSize,
+      fromCache: data.fromCache || false
+    };
+  } catch (error) {
+    console.error('Error fetching emails:', error);
+    throw error;
+  }
+}
+
+/**
+ * Fetch a single email by ID
+ */
+export async function fetchEmailById(id: string, sync: boolean = false): Promise<Email> {
+  try {
+    let url = `/api/emails/${id}`;
+    if (sync) {
+      url += '?sync=true';
+    }
+    
+    console.log(`Fetching email with ID: ${id}, sync: ${sync}`);
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error(`Error fetching email ${id}:`, errorData);
+      throw new Error(errorData.error || 'Failed to fetch email');
+    }
+    
+    const data = await response.json();
+    const email = data.email;
+    
+    if (!email) {
+      console.error('API returned no email data for ID:', id);
+      throw new Error('No email data returned from API');
+    }
+    
+    // Log the email data for debugging
+    console.log('Email detail data:', {
+      id: email.id,
+      from: email.from,
+      fromName: email.fromName,
+      subject: email.subject,
+      bodyLength: email.body ? email.body.length : 0,
+      bodyPreview: email.body ? email.body.substring(0, 50) + '...' : 'No body'
+    });
+    
+    // Extract sender info
+    const senderInfo = extractSenderInfo(email.fromName, email.from);
+    
+    // Transform the API response to match our Email interface
+    return {
+      id: email.id,
+      folder: determineFolder(email),
+      from: senderInfo.email,
+      fromName: senderInfo.name,
+      to: Array.isArray(email.to) ? email.to.join(', ') : (email.to || ''),
+      subject: email.subject || '(No Subject)',
+      body: email.body || '',
+      date: email.receivedDate || new Date().toISOString(),
+      isRead: email.isRead || false,
+      isStarred: false,
+      attachments: email.attachments?.map((att: any) => ({
+        id: att.id,
+        name: att.name,
+        size: att.size || 0,
+        type: att.contentType || 'application/octet-stream'
+      })),
+      itemId: email.id
+    };
+  } catch (error) {
+    console.error('Error fetching email by ID:', error);
+    throw error;
+  }
+}
+
+/**
+ * Helper function to map email domain from @restoremastersllc.com to @weroofamerica.com
+ */
+function mapEmailDomain(email: string): string {
+  if (email && email.includes('@restoremastersllc.com')) {
+    const username = email.split('@')[0];
+    return `${username}@weroofamerica.com`;
+  }
+  return email;
+}
+
+/**
+ * Send a new email
+ */
+export async function sendNewEmail(
+  to: string,
+  subject: string,
+  body: string,
+  cc?: string,
+  bcc?: string,
+  attachments?: File[]
+): Promise<{ success: boolean; emailId?: string; message: string }> {
+  try {
+    // Prepare recipients arrays and map domains if needed
+    const toArray = to.split(/[,;]/).map(email => mapEmailDomain(email.trim())).filter(Boolean);
+    const ccArray = cc ? cc.split(/[,;]/).map(email => mapEmailDomain(email.trim())).filter(Boolean) : undefined;
+    const bccArray = bcc ? bcc.split(/[,;]/).map(email => mapEmailDomain(email.trim())).filter(Boolean) : undefined;
+    
+    // TODO: Handle attachments when implementing attachment support
+    
+    const response = await fetch('/api/emails', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ rawEmail }),
+      body: JSON.stringify({
+        to: toArray,
+        subject,
+        body,
+        cc: ccArray,
+        bcc: bccArray
+      }),
     });
-
+    
     if (!response.ok) {
-      throw new Error(`Failed to parse email: ${response.statusText}`);
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to send email');
     }
-
+    
     const result = await response.json();
-    return result.html || result.textAsHtml || `<pre>${result.text || ''}</pre>` || parseEmailBodySimple(rawEmail);
+    return {
+      success: result.success,
+      emailId: result.emailId,
+      message: result.message || 'Email sent successfully'
+    };
   } catch (error) {
-    console.error('Error parsing email with server API:', error);
-    // Fallback to simple parsing if server API fails
-    return parseEmailBodySimple(rawEmail);
+    console.error('Error sending email:', error);
+    throw error;
   }
 }
 
 /**
- * Simple fallback parser for email bodies
+ * Move an email to a different folder
  */
-function parseEmailBodySimple(rawEmail: string): string {
-  // Check if this is a multipart email
-  const boundaryMatch = rawEmail.match(/Content-Type: multipart\/\w+;\s*boundary="([^"]+)"/i);
-  
-  if (boundaryMatch && boundaryMatch[1]) {
-    const boundary = boundaryMatch[1];
-    const parts = rawEmail.split(new RegExp(`--${boundary}(?:--)?`, 'g')).filter(Boolean);
-    
-    // Look for HTML part first
-    const htmlPart = parts.find(part => part.includes('Content-Type: text/html'));
-    if (htmlPart) {
-      const match = htmlPart.match(/(?:^\s*|\n\n)([\s\S]+)$/);
-      if (match && match[1]) {
-        return match[1].trim();
-      }
-    }
-    
-    // If no HTML part, look for text part
-    const textPart = parts.find(part => part.includes('Content-Type: text/plain'));
-    if (textPart) {
-      const match = textPart.match(/(?:^\s*|\n\n)([\s\S]+)$/);
-      if (match && match[1]) {
-        return `<pre>${match[1].trim()}</pre>`;
-      }
-    }
-  }
-  
-  // If not multipart or couldn't parse parts, return the raw email
-  if (rawEmail.includes('Content-Type:')) {
-    return `<pre>${rawEmail}</pre>`;
-  }
-  
-  return rawEmail;
-}
-
-/**
- * Extract attachments from a raw email using server API
- */
-export async function extractAttachments(rawEmail: string): Promise<EmailAttachment[]> {
+export async function moveEmail(
+  emailId: string,
+  toFolder: 'inbox' | 'sent' | 'draft' | 'trash' | 'spam'
+): Promise<{ success: boolean; message: string }> {
   try {
-    // For client-side, we'll use a server API endpoint to extract attachments
-    const response = await fetch('/api/email/attachments', {
-      method: 'POST',
+    // Map folder names to match API expectations
+    const folderMap: Record<string, string> = {
+      'inbox': 'inbox',
+      'sent': 'sentitems',
+      'draft': 'drafts',
+      'trash': 'deleteditems',
+      'spam': 'junkemail'
+    };
+    
+    const destinationFolder = folderMap[toFolder.toLowerCase()];
+    
+    const response = await fetch('/api/emails/move', {
+      method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ rawEmail }),
+      body: JSON.stringify({
+        emailId,
+        destinationFolderId: destinationFolder
+      }),
     });
-
-    if (!response.ok) {
-      throw new Error(`Failed to extract attachments: ${response.statusText}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error extracting attachments with server API:', error);
-    // Fallback to simple extraction if server API fails
-    return extractAttachmentsSimple(rawEmail);
-  }
-}
-
-/**
- * Simple fallback for attachment extraction
- */
-function extractAttachmentsSimple(rawEmail: string): EmailAttachment[] {
-  const attachments: EmailAttachment[] = [];
-  const boundaryMatch = rawEmail.match(/Content-Type: multipart\/\w+;\s*boundary="([^"]+)"/i);
-  
-  if (boundaryMatch && boundaryMatch[1]) {
-    const boundary = boundaryMatch[1];
-    const parts = rawEmail.split(new RegExp(`--${boundary}(?:--)?`, 'g')).filter(Boolean);
     
-    // Process each part
-    parts.forEach((part, index) => {
-      // Look for attachment parts
-      if (part.includes('Content-Disposition: attachment') || 
-          (part.includes('Content-Disposition: inline') && !part.includes('Content-Type: text/'))) {
-        
-        // Extract filename
-        const filenameMatch = part.match(/filename="([^"]+)"/i);
-        const filename = filenameMatch ? filenameMatch[1] : `attachment-${index}`;
-        
-        // Extract content type
-        const contentTypeMatch = part.match(/Content-Type: ([^;]+)/i);
-        const contentType = contentTypeMatch ? contentTypeMatch[1].trim() : 'application/octet-stream';
-        
-        // Extract content (simplified - would need proper decoding in real implementation)
-        const contentStart = part.indexOf('\r\n\r\n');
-        let contentLength = 0;
-        
-        if (contentStart > 0) {
-          const content = part.slice(contentStart + 4);
-          contentLength = content.length; 
-        }
-        
-        attachments.push({
-          id: Math.random().toString(36).substring(2, 9),
-          name: filename,
-          size: contentLength,
-          type: contentType
-        });
-      }
-    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to move email');
+    }
+    
+    const result = await response.json();
+    return {
+      success: result.success,
+      message: result.message || 'Email moved successfully'
+    };
+  } catch (error) {
+    console.error('Error moving email:', error);
+    throw error;
   }
-  
-  return attachments;
 }
 
 /**
- * Get MIME type for a file extension using the mime library
+ * Delete an email
  */
-export function getMimeType(filename: string): string {
-  return mime.getType(filename) || 'application/octet-stream';
+export async function deleteEmail(
+  emailId: string,
+  hardDelete: boolean = false
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const response = await fetch(`/api/emails/${emailId}?hardDelete=${hardDelete}`, {
+      method: 'DELETE',
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to delete email');
+    }
+    
+    const result = await response.json();
+    return {
+      success: result.success,
+      message: result.message || 'Email deleted successfully'
+    };
+  } catch (error) {
+    console.error('Error deleting email:', error);
+    throw error;
+  }
+}
+
+/**
+ * Helper function to determine the folder of an email
+ */
+function determineFolder(email: any): 'inbox' | 'sent' | 'draft' | 'trash' | 'spam' {
+  if (email.folder) {
+    const folderMap: Record<string, 'inbox' | 'sent' | 'draft' | 'trash' | 'spam'> = {
+      'inbox': 'inbox',
+      'sentitems': 'sent',
+      'drafts': 'draft',
+      'deleteditems': 'trash',
+      'junkemail': 'spam'
+    };
+    
+    return folderMap[email.folder.toLowerCase()] || 'inbox';
+  }
+  
+  // Default to inbox if no folder information is available
+  return 'inbox';
 } 

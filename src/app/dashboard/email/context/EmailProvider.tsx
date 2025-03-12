@@ -1,15 +1,8 @@
 'use client';
 
-import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useRef } from 'react';
 import { Email } from '../types';
 import { useEmailCache } from '../services/useEmailCache';
-import { getCurrentUserId } from '../services/auth';
-
-interface EmailUpdateEvent extends CustomEvent {
-  detail: {
-    emails: Email[];
-  };
-}
 
 // Create the email context
 export const EmailContext = createContext<{
@@ -23,18 +16,24 @@ export const EmailContext = createContext<{
   setSelectedEmail: (email: Email | null) => void;
   error: string | null;
   setError: (error: string | null) => void;
-  totalPages: number;
-  setTotalPages: (pages: number) => void;
+  totalEmails: number;
   currentPage: number;
   setCurrentPage: (page: number) => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
-  fetchEmailById: (folder: string, emailId: number) => Promise<Email | null>;
-  invalidateCache: (folder: string) => void;
-  nextCursor: string | null;
-  setNextCursor: (cursor: string | null) => void;
-  hasMore: boolean;
-  setHasMore: (hasMore: boolean) => void;
+  fetchEmailById: (id: string, sync?: boolean) => Promise<Email>;
+  refreshEmails: (forceRefresh?: boolean) => Promise<void>;
+  updateEmail: (email: Email) => void;
+  removeEmail: (emailId: string) => void;
+  addEmail: (email: Email) => void;
+  moveEmail: (emailId: string, toFolder: 'inbox' | 'sent' | 'draft' | 'trash' | 'spam') => void;
+  searchEmails: (query: string) => Promise<void>;
+  currentFolder: 'inbox' | 'sent' | 'draft' | 'trash' | 'spam';
+  setCurrentFolder: (folder: 'inbox' | 'sent' | 'draft' | 'trash' | 'spam') => void;
+  hasNewEmails: boolean;
+  newEmailsCount: number;
+  syncingEmails: boolean;
+  checkForNewEmails: () => Promise<void>;
 }>({
   emails: [],
   showCompose: false,
@@ -46,18 +45,24 @@ export const EmailContext = createContext<{
   setSelectedEmail: () => {},
   error: null,
   setError: () => {},
-  totalPages: 1,
-  setTotalPages: () => {},
+  totalEmails: 0,
   currentPage: 1,
   setCurrentPage: () => {},
   searchQuery: '',
   setSearchQuery: () => {},
-  fetchEmailById: async () => null,
-  invalidateCache: () => {},
-  nextCursor: null,
-  setNextCursor: () => {},
-  hasMore: false,
-  setHasMore: () => {},
+  fetchEmailById: async () => ({ id: 0, folder: 'inbox', from: '', fromName: '', to: '', subject: '', body: '', date: '', isRead: false, isStarred: false }),
+  refreshEmails: async () => {},
+  updateEmail: () => {},
+  removeEmail: () => {},
+  addEmail: () => {},
+  moveEmail: () => {},
+  searchEmails: async () => {},
+  currentFolder: 'inbox',
+  setCurrentFolder: () => {},
+  hasNewEmails: false,
+  newEmailsCount: 0,
+  syncingEmails: false,
+  checkForNewEmails: async () => {},
 });
 
 // Custom hook to use the email context
@@ -68,27 +73,46 @@ interface EmailProviderProps {
 }
 
 export const EmailProvider = ({ children }: EmailProviderProps) => {
-  const [emails, setEmails] = useState<Email[]>([]);
   const [showCompose, setShowCompose] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
-  const [userId, setUserId] = useState<string>('');
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState<boolean>(false);
-  const emailCache = useEmailCache(userId);
+  const [currentFolder, setCurrentFolder] = useState<'inbox' | 'sent' | 'draft' | 'trash' | 'spam'>('inbox');
+  
+  // Use the email cache hook
+  const {
+    emails,
+    loading: isLoading,
+    error,
+    totalEmails,
+    refreshEmails,
+    getEmail: fetchEmailById,
+    updateEmail,
+    removeEmail,
+    addEmail,
+    moveEmail,
+    searchEmails,
+    hasNewEmails,
+    newEmailsCount,
+    syncingEmails
+  } = useEmailCache({
+    folder: currentFolder,
+    page: currentPage,
+    pageSize: 50,
+    initialLoad: true,
+    syncInterval: 60000 // Check for new emails every minute
+  });
 
-  // Get the current user ID
-  useEffect(() => {
-    const getUserId = async () => {
-      const id = await getCurrentUserId();
-      setUserId(id);
-    };
-    
-    getUserId();
+  // Function to set loading state (for compatibility with existing code)
+  const setIsLoading = useCallback((loading: boolean) => {
+    // This is a no-op since loading is now managed by the useEmailCache hook
+    console.log('setIsLoading is deprecated, loading is now managed by useEmailCache');
+  }, []);
+
+  // Function to set error state (for compatibility with existing code)
+  const setError = useCallback((newError: string | null) => {
+    // This is a no-op since error is now managed by the useEmailCache hook
+    console.log('setError is deprecated, error is now managed by useEmailCache');
   }, []);
 
   // Function to toggle compose visibility
@@ -98,129 +122,38 @@ export const EmailProvider = ({ children }: EmailProviderProps) => {
   };
 
   // Function to open compose modal
-  const openComposeModal = useCallback(() => {
-    console.log('openComposeModal called in context');
+  const openComposeModal = () => {
     setShowCompose(true);
-  }, []);
+  };
 
-  // Function to handle rate limiting
-  const handleRateLimitedResponse = useCallback(async (response: Response): Promise<boolean> => {
-    if (response.status !== 429) {
-      return false;
+  // Function to manually check for new emails
+  const checkForNewEmails = useCallback(async () => {
+    try {
+      await refreshEmails(true); // Force refresh to check for new emails
+    } catch (err) {
+      console.error('Error checking for new emails:', err);
     }
-    
-    // Get retry-after header if available
-    const retryAfter = response.headers.get('Retry-After');
-    const resetTime = response.headers.get('X-RateLimit-Reset');
-    
-    let waitTime = 5000; // Default 5 seconds
-    
-    if (retryAfter) {
-      // Retry-After is in seconds
-      waitTime = parseInt(retryAfter, 10) * 1000;
-    } else if (resetTime) {
-      // X-RateLimit-Reset is in Unix timestamp (seconds)
-      const resetTimeMs = parseInt(resetTime, 10) * 1000;
-      waitTime = Math.max(1000, resetTimeMs - Date.now());
-    }
-    
-    // Cap wait time at 30 seconds
-    waitTime = Math.min(waitTime, 30000);
-    
-    console.log(`Rate limit exceeded. Waiting ${Math.ceil(waitTime / 1000)} seconds before retrying.`);
-    
-    // Wait for the specified time
-    await new Promise(resolve => setTimeout(resolve, waitTime));
-    
-    return true;
-  }, []);
+  }, [refreshEmails]);
 
-  // Function to fetch a specific email by ID
-  const fetchEmailById = useCallback(async (folder: string, emailId: number): Promise<Email | null> => {
-    // First, try to get the email from cache
-    if (userId) {
-      const cachedEmail = emailCache.getEmailById(folder, emailId);
-      if (cachedEmail) {
-        console.log('Email found in cache:', cachedEmail.id, cachedEmail.subject);
-        return cachedEmail;
-      }
-    }
-
-    // If not in cache, fetch from API with retry logic
-    let retries = 0;
-    const maxRetries = 3;
-    
-    while (retries < maxRetries) {
-      try {
-        setIsLoading(true);
-        const response = await fetch(`/api/email/${emailId}?folder=${folder}`);
-        
-        // Handle rate limiting
-        if (await handleRateLimitedResponse(response)) {
-          continue; // Retry after waiting
-        }
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch email: ${response.statusText}`);
-        }
-        
-        const email = await response.json();
-        
-        // Update the cache with this email
-        if (userId) {
-          emailCache.updateEmail(folder, email);
-        }
-        
-        return email;
-      } catch (err) {
-        console.error('Error fetching email by ID:', err);
-        
-        if (retries >= maxRetries - 1) {
-          setError(err instanceof Error ? err.message : 'Failed to fetch email');
-          return null;
-        }
-        
-        retries++;
-        const delay = 1000 * Math.pow(2, retries);
-        console.log(`Retrying in ${delay}ms (${retries}/${maxRetries})`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    
-    return null;
-  }, [emailCache, setError, setIsLoading, userId, handleRateLimitedResponse]);
-
-  // Function to invalidate cache for a folder
-  const invalidateCache = useCallback((folder: string) => {
-    if (userId) {
-      emailCache.clearCache(folder);
-    }
-  }, [emailCache, userId]);
-
-  // Subscribe to emails updates
+  // Effect to refresh emails when folder or page changes
   useEffect(() => {
-    const handleEmailUpdate = (event: EmailUpdateEvent) => {
-      setEmails(event.detail.emails);
-      setIsLoading(false);
-    };
-    
-    window.addEventListener('emailsUpdated', handleEmailUpdate as EventListener);
-    
-    // Add listener for showComposeModal event
-    const handleShowComposeModal = () => {
-      console.log('showComposeModal event received');
-      setShowCompose(true);
-    };
-    
-    window.addEventListener('showComposeModal', handleShowComposeModal);
-    
-    return () => {
-      window.removeEventListener('emailsUpdated', handleEmailUpdate as EventListener);
-      window.removeEventListener('showComposeModal', handleShowComposeModal);
-    };
-  }, []);
+    // Only refresh when folder or page changes, not on every render
+    if (initialLoad.current) {
+      initialLoad.current = false;
+      refreshEmails(false).catch(err => {
+        console.error('Error refreshing emails:', err);
+      });
+    }
+  }, [currentFolder, currentPage, refreshEmails]);
+
+  // Add a separate effect to handle folder changes
+  useEffect(() => {
+    // Reset initialLoad when folder changes
+    initialLoad.current = true;
+  }, [currentFolder]);
+
+  // Add a ref to track initial load
+  const initialLoad = useRef(true);
 
   return (
     <EmailContext.Provider
@@ -235,18 +168,24 @@ export const EmailProvider = ({ children }: EmailProviderProps) => {
         setSelectedEmail,
         error,
         setError,
-        totalPages,
-        setTotalPages,
+        totalEmails,
         currentPage,
         setCurrentPage,
         searchQuery,
         setSearchQuery,
         fetchEmailById,
-        invalidateCache,
-        nextCursor,
-        setNextCursor,
-        hasMore,
-        setHasMore,
+        refreshEmails,
+        updateEmail,
+        removeEmail,
+        addEmail,
+        moveEmail,
+        searchEmails,
+        currentFolder,
+        setCurrentFolder,
+        hasNewEmails,
+        newEmailsCount,
+        syncingEmails,
+        checkForNewEmails
       }}
     >
       {children}
