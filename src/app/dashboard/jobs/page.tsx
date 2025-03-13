@@ -402,11 +402,13 @@ export default function JobsPage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedClassification, setSelectedClassification] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState('');
   const [isGridView, setIsGridView] = useState(true);
   const [expandedJobIds, setExpandedJobIds] = useState<string[]>([]);
   const [itemsPerPage, setItemsPerPage] = useState(ITEMS_PER_PAGE);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [expandAll, setExpandAll] = useState(false);
+  const [loadingState, setLoadingState] = useState<'initial' | 'loading' | 'syncing' | 'loaded'>('initial');
   
   const { 
     allJobs,
@@ -417,6 +419,17 @@ export default function JobsPage() {
     totalPages,
     changePage,
   } = useJobsData(session?.user?.email, itemsPerPage);
+
+  // Update loading state based on isLoading and isSyncing
+  useEffect(() => {
+    if (isLoading && !isSyncing) {
+      setLoadingState('loading');
+    } else if (isSyncing) {
+      setLoadingState('syncing');
+    } else if (allJobs.length > 0) {
+      setLoadingState('loaded');
+    }
+  }, [isLoading, isSyncing, allJobs.length]);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -437,14 +450,42 @@ export default function JobsPage() {
       const jobStatus = job.details['text95__1'] || '';
       const jobClassification = STATUS_CLASSIFICATIONS[jobStatus] || '';
       
-      if (!selectedClassification) return matchesSearch;
-      
-      if (selectedClassification === 'Unclassified') {
-        return matchesSearch && !STATUS_CLASSIFICATIONS[jobStatus];
+      // Check if job matches the selected classification
+      let matchesClassification = true;
+      if (selectedClassification) {
+        if (selectedClassification === 'Unclassified') {
+          matchesClassification = !STATUS_CLASSIFICATIONS[jobStatus];
+        } else {
+          matchesClassification = jobClassification === selectedClassification;
+        }
       }
-      return matchesSearch && jobClassification === selectedClassification;
+      
+      // Check if job matches the selected status
+      let matchesStatus = true;
+      if (selectedStatus) {
+        matchesStatus = jobStatus === selectedStatus;
+      }
+      
+      return matchesSearch && matchesClassification && matchesStatus;
     });
-  }, [allJobs, searchQuery, selectedClassification]);
+  }, [allJobs, searchQuery, selectedClassification, selectedStatus]);
+
+  // Create search-only filtered jobs for the classification filter
+  const searchFilteredJobs = useMemo(() => {
+    if (!searchQuery) return allJobs;
+    
+    const filtered = allJobs.filter((job) => {
+      const searchLower = searchQuery.toLowerCase();
+      return job.name.toLowerCase().includes(searchLower) ||
+        Object.values(job.details).some(value => 
+          value && typeof value === 'string' && value.toLowerCase().includes(searchLower)
+        );
+    });
+    
+    // If search returns zero results, return an empty array instead of undefined
+    // This ensures the classification filter shows zero counts
+    return filtered.length > 0 ? filtered : [];
+  }, [allJobs, searchQuery]);
 
   const filteredTotal = useMemo(() => {
     return filteredJobs.length;
@@ -493,26 +534,31 @@ export default function JobsPage() {
   useEffect(() => {
     setExpandAll(false);
     setExpandedJobIds([]);
-  }, [currentPage, itemsPerPage, searchQuery, selectedClassification]);
+  }, [currentPage, itemsPerPage, searchQuery, selectedClassification, selectedStatus]);
+
+  // Reset status filter when classification changes
+  useEffect(() => {
+    setSelectedStatus('');
+  }, [selectedClassification]);
 
   // Calculate total pages for filtered results
   const filteredTotalPages = useMemo(() => {
-    if (searchQuery || selectedClassification) {
+    if (searchQuery || selectedClassification || selectedStatus) {
       return Math.ceil(filteredTotal / itemsPerPage) || 1;
     }
     return totalPages;
-  }, [filteredTotal, totalPages, searchQuery, selectedClassification, itemsPerPage]);
+  }, [filteredTotal, totalPages, searchQuery, selectedClassification, selectedStatus, itemsPerPage]);
 
   // Wrap the changePage function to include search state
   const handlePageChange = useCallback((page: number) => {
-    const isSearchActive = searchQuery !== '' || selectedClassification !== '';
+    const isSearchActive = searchQuery !== '' || selectedClassification !== '' || selectedStatus !== '';
     changePage(page, isSearchActive);
-  }, [changePage, searchQuery, selectedClassification]);
+  }, [changePage, searchQuery, selectedClassification, selectedStatus]);
 
   // Reset to page 1 when search or filter changes
   useEffect(() => {
     handlePageChange(1);
-  }, [searchQuery, selectedClassification, handlePageChange]);
+  }, [searchQuery, selectedClassification, selectedStatus, handlePageChange]);
 
   // Handle items per page change
   const handleItemsPerPageChange = useCallback((newItemsPerPage: number) => {
@@ -542,14 +588,44 @@ export default function JobsPage() {
     }
   }, []);
 
-  if (status === 'loading' || isLoading) {
+  // Skeleton loader component for jobs
+  const JobSkeleton = () => (
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 animate-pulse">
+      <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-4"></div>
+      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-3"></div>
+      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-3"></div>
+      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3 mb-3"></div>
+      <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mt-4"></div>
+    </div>
+  );
+
+  // Render skeletons based on current view mode
+  const renderSkeletons = () => {
+    const skeletonCount = itemsPerPage > 10 ? 10 : itemsPerPage;
+    
+    return isGridView ? (
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {Array(skeletonCount).fill(0).map((_, index) => (
+          <JobSkeleton key={index} />
+        ))}
+      </div>
+    ) : (
+      <div className="space-y-4">
+        {Array(skeletonCount).fill(0).map((_, index) => (
+          <JobSkeleton key={index} />
+        ))}
+      </div>
+    );
+  };
+
+  if (status === 'loading') {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="flex flex-col items-center space-y-4">
               <Loader2 className="h-12 w-12 text-blue-500 dark:text-blue-400 animate-spin" />
-              <p className="text-gray-500 dark:text-gray-300">Loading jobs...</p>
+              <p className="text-gray-500 dark:text-gray-300">Authenticating...</p>
             </div>
           </div>
         </div>
@@ -580,7 +656,7 @@ export default function JobsPage() {
           <div className="flex flex-col sm:flex-row gap-4 flex-wrap mb-6">
             <button
               onClick={refreshJobs}
-              disabled={isSyncing || isLoading}
+              disabled={loadingState === 'syncing' || loadingState === 'loading'}
               className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 
                        text-sm font-medium rounded-lg text-gray-700 dark:text-gray-200 
                        bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700
@@ -589,12 +665,12 @@ export default function JobsPage() {
                        dark:focus:ring-offset-gray-900 dark:focus:ring-blue-400
                        disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSyncing ? (
+              {loadingState === 'syncing' ? (
                 <Loader2 className="mr-2 h-5 w-5 text-gray-400 dark:text-gray-300 animate-spin" />
               ) : (
                 <RefreshCcw className="mr-2 h-5 w-5 text-gray-400 dark:text-gray-300" />
               )}
-              {isSyncing ? 'Syncing...' : 'Refresh Jobs'}
+              {loadingState === 'syncing' ? 'Syncing...' : 'Refresh Jobs'}
             </button>
           </div>
           
@@ -602,6 +678,10 @@ export default function JobsPage() {
             <ClassificationFilter
               value={selectedClassification}
               onChange={setSelectedClassification}
+              statusFilter={selectedStatus}
+              onStatusChange={setSelectedStatus}
+              jobs={allJobs}
+              filteredJobs={searchFilteredJobs}
             />
           </div>
           
@@ -617,15 +697,22 @@ export default function JobsPage() {
             
             {/* Jobs count - Center */}
             <div className="w-full md:w-1/3 flex justify-center">
-              <p className="text-sm text-gray-600 dark:text-gray-300">
-                Found {filteredTotal} jobs 
-                {filteredTotal > 0 && (
-                  <span>
-                    (showing {Math.min((currentPage - 1) * itemsPerPage + 1, filteredTotal)}-
-                    {Math.min(currentPage * itemsPerPage, filteredTotal)})
-                  </span>
-                )}
-              </p>
+              {loadingState === 'loaded' ? (
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  Found {filteredTotal} jobs 
+                  {filteredTotal > 0 && (
+                    <span>
+                      (showing {Math.min((currentPage - 1) * itemsPerPage + 1, filteredTotal)}-
+                      {Math.min(currentPage * itemsPerPage, filteredTotal)})
+                    </span>
+                  )}
+                </p>
+              ) : (
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  {loadingState === 'loading' ? 'Loading jobs...' : 
+                   loadingState === 'syncing' ? 'Syncing latest jobs...' : ''}
+                </p>
+              )}
             </div>
             
             {/* Grid/List toggle and Expand All - Right */}
@@ -633,11 +720,12 @@ export default function JobsPage() {
               {/* Expand All toggle */}
               <button
                 onClick={toggleExpandAll}
+                disabled={loadingState !== 'loaded'}
                 className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors border border-gray-200 dark:border-gray-700
                   ${expandAll
                     ? 'bg-blue-500 text-white border-blue-500 dark:border-blue-600'
                     : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                  }`}
+                  } ${loadingState !== 'loaded' ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 {expandAll ? 'Collapse All' : 'Expand All'}
               </button>
@@ -650,11 +738,12 @@ export default function JobsPage() {
                     setExpandAll(false);
                     setExpandedJobIds([]);
                   }}
+                  disabled={loadingState !== 'loaded'}
                   className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                     isGridView
                       ? 'bg-blue-500 text-white'
                       : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                  }`}
+                  } ${loadingState !== 'loaded' ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   Grid
                 </button>
@@ -664,11 +753,12 @@ export default function JobsPage() {
                     setExpandAll(false);
                     setExpandedJobIds([]);
                   }}
+                  disabled={loadingState !== 'loaded'}
                   className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                     !isGridView
                       ? 'bg-blue-500 text-white'
                       : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                  }`}
+                  } ${loadingState !== 'loaded' ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   List
                 </button>
@@ -676,11 +766,15 @@ export default function JobsPage() {
             </div>
           </div>
 
-          {/* Jobs Grid/List */}
-          {paginatedFilteredJobs.length === 0 ? (
+          {/* Jobs Grid/List with loading states */}
+          {loadingState === 'loading' ? (
+            renderSkeletons()
+          ) : loadingState === 'syncing' && paginatedFilteredJobs.length === 0 ? (
+            renderSkeletons()
+          ) : paginatedFilteredJobs.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-gray-600 dark:text-gray-300">
-                {searchQuery || selectedClassification ? 'No jobs found matching your search.' : 'No jobs found.'}
+                {searchQuery || selectedClassification || selectedStatus ? 'No jobs found matching your search.' : 'No jobs found.'}
               </p>
             </div>
           ) : isGridView ? (
@@ -693,6 +787,12 @@ export default function JobsPage() {
                   onToggle={() => toggleJobExpansion(job.id)}
                 />
               ))}
+              {loadingState === 'syncing' && (
+                <div className="col-span-full flex justify-center items-center py-4">
+                  <Loader2 className="h-6 w-6 text-blue-500 dark:text-blue-400 animate-spin mr-2" />
+                  <span className="text-sm text-gray-600 dark:text-gray-300">Syncing more jobs...</span>
+                </div>
+              )}
             </div>
           ) : (
             <div className="space-y-4">
@@ -704,11 +804,17 @@ export default function JobsPage() {
                   onToggle={() => toggleJobExpansion(job.id)}
                 />
               ))}
+              {loadingState === 'syncing' && (
+                <div className="flex justify-center items-center py-4">
+                  <Loader2 className="h-6 w-6 text-blue-500 dark:text-blue-400 animate-spin mr-2" />
+                  <span className="text-sm text-gray-600 dark:text-gray-300">Syncing more jobs...</span>
+                </div>
+              )}
             </div>
           )}
           
           {/* Pagination */}
-          {filteredTotalPages > 1 && (
+          {filteredTotalPages > 1 && loadingState === 'loaded' && (
             <Pagination 
               currentPage={currentPage} 
               totalPages={filteredTotalPages} 

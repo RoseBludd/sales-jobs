@@ -14,6 +14,8 @@ export const JobCard = ({ job, isExpanded, onToggle }: JobCardProps) => {
   const status = job.details['text95__1'] || '';
   const classification = STATUS_CLASSIFICATIONS[status] || 'Unclassified';
   const amount = Number(job.details['jp_total__1'] || 0);
+  const customerFirstName = job.details['text0__1'] || '';
+  const customerLastName = job.details['text1__1'] || '';
   
   // Add refs and state for smooth height transition
   const contentRef = useRef<HTMLDivElement>(null);
@@ -57,6 +59,25 @@ export const JobCard = ({ job, isExpanded, onToggle }: JobCardProps) => {
     }
   };
 
+  // Format customer name with job name
+  const formatTitle = () => {
+    const hasCustomerName = customerFirstName.trim() || customerLastName.trim();
+    
+    if (hasCustomerName) {
+      const customerName = [customerFirstName, customerLastName].filter(Boolean).join(' ');
+      return (
+        <>
+          <span className="font-semibold">{customerName}</span>
+          {job.name && job.name !== customerName && (
+            <span className="ml-2">- {job.name}</span>
+          )}
+        </>
+      );
+    }
+    
+    return job.name || 'Unnamed Job';
+  };
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-all duration-200 hover:shadow-md flex flex-col h-full">
       <button
@@ -66,7 +87,7 @@ export const JobCard = ({ job, isExpanded, onToggle }: JobCardProps) => {
         <div className="flex items-start justify-between">
           <div className="space-y-2">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              {job.name || 'Unnamed Job'}
+              {formatTitle()}
             </h3>
             <div className="flex flex-wrap gap-2">
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">

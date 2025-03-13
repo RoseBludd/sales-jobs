@@ -4,7 +4,14 @@ import { Inter } from 'next/font/google';
 import AuthProvider from '@/components/auth/AuthProvider';
 import Script from 'next/script';
 
-const inter = Inter({ subsets: ['latin'] });
+// Configure Inter font with fallback options
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  weight: ['400', '500', '600', '700'],
+  fallback: ['system-ui', 'Arial', 'sans-serif'],
+  preload: false, // Don't preload to avoid build failures
+});
 
 export const metadata: Metadata = {
   title: {
