@@ -64,6 +64,21 @@ const Sidebar = ({ sidebarOpen, toggleSidebar, currentPath, children }: SidebarP
   const router = useRouter();
   const { isDark, toggleTheme } = useTheme();
 
+  // Add useEffect to log session data when it changes
+  useEffect(() => {
+    if (session) {
+      console.log('🔍 Session in Sidebar:', {
+        email: session.user?.email,
+        id: session.user?.id,
+        name: session.user?.name,
+        mondayId: session.user?.mondayId,
+        firstName: session.user?.firstName,
+        lastName: session.user?.lastName,
+        fullSession: session
+      });
+    }
+  }, [session]);
+
   // Helper function to check if a path is active, including sub-paths
   const isPathActive = (navPath: string) => {
     // Special case for dashboard home
@@ -145,7 +160,11 @@ const Sidebar = ({ sidebarOpen, toggleSidebar, currentPath, children }: SidebarP
       <footer className="p-4 border-t border-gray-700">
         <div className="flex items-center mb-4">
           <User size={18} className="mr-2 text-gray-400" />
-          <span className="text-sm text-gray-300">{session?.user?.email || 'User'}</span>
+          <span className="text-sm text-gray-300">
+            {session?.user?.firstName && session?.user?.lastName 
+              ? `${session.user.firstName} ${session.user.lastName}`
+              : session?.user?.firstName || session?.user?.email || 'User'}
+          </span>
         </div>
         <div className="flex items-center justify-between">
           <div className="flex gap-2">

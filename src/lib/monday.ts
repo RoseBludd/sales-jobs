@@ -1,5 +1,6 @@
 import mondaySdk from 'monday-sdk-js';
 import fetch from 'node-fetch';
+import { prisma } from '@/lib/prisma';
 
 const MONDAY_API_KEY = process.env.MONDAY_API_KEY;
 
@@ -25,6 +26,10 @@ const BOARD_ID_DATA = process.env.MONDAY_BOARD_ID_DATA || "6727219152";
 const EMAIL_COLUMN_ID = "email7";
 const EMAIL_COLUMN_ID_DATA = "email5__1";
 const PASSWORD_COLUMN_ID = "text_mknhvpkq";
+
+// Define column IDs for first and last name
+const FIRST_NAME_COLUMN_ID = "text25";
+const LAST_NAME_COLUMN_ID = "text1";
 
 if (!MONDAY_API_KEY) {
   throw new Error('Monday.com API key not found in environment variables');
@@ -58,6 +63,7 @@ interface MondayResponse {
 interface ChangePasswordResult {
   success: boolean;
   error?: string;
+  mondayId?: string;
 }
 
 // Column mapping for Monday.com board
@@ -99,7 +105,7 @@ export async function getUserJobs(userEmail: string, options?: {
   const limit = options?.limit || 50;
   const queryParams = options?.cursor 
     ? `cursor: "${options.cursor}"`
-    : `query_params: {rules: [{column_id: "${EMAIL_COLUMN_ID_DATA}", compare_value: ["${userEmail}"]}], operator: and}`;
+    : `query_params: {rules: [{column_id: "${EMAIL_COLUMN_ID_DATA}", compare_value: ["${userEmail}"]}], order_by: [{ column_id: "__last_updated__", direction: desc }]}`;
 
   try {
     const query = `query {
@@ -168,7 +174,7 @@ export async function getAllUserJobs(userEmail: string) {
   try {
     while (hasMoreItems) {
       const queryParams = isFirstRequest
-        ? `query_params: {rules: [{column_id: "${EMAIL_COLUMN_ID_DATA}", compare_value: ["${userEmail}"]}], operator: and}`
+        ? `query_params: {rules: [{column_id: "${EMAIL_COLUMN_ID_DATA}", compare_value: ["${userEmail}"]}], order_by: [{ column_id: "__last_updated__", direction: desc }]}`
         : nextCursor ? `cursor: "${nextCursor}"` : '';
       
       if (isFirstRequest) {
@@ -239,19 +245,16 @@ export async function checkEmailExists(email: string): Promise<boolean> {
   console.log('Checking email existence for:', email);
   try {
     const query = `query {
-      boards(ids: [${BOARD_ID_USERS}]) {
+      boards(ids: [${BOARD_ID_DATA}]) {
         items_page(
           limit: 1,
           query_params: {
-            rules: [{column_id: "${EMAIL_COLUMN_ID}", compare_value: ["${email}"]}],
+            rules: [{column_id: "${EMAIL_COLUMN_ID_DATA}", compare_value: ["${email}"]}],
             operator: and
           }
         ) {
           items {
             id
-            column_values(ids: ["${PASSWORD_COLUMN_ID}"]) {
-              text
-            }
           }
         }
       }
@@ -281,7 +284,9 @@ export async function checkCredentials(email: string, password: string): Promise
         ) {
           items {
             id
-            column_values(ids: ["${PASSWORD_COLUMN_ID}"]) {
+            name
+            column_values(ids: ["${PASSWORD_COLUMN_ID}", "${FIRST_NAME_COLUMN_ID}", "${LAST_NAME_COLUMN_ID}"]) {
+              id
               text
             }
           }
@@ -299,7 +304,11 @@ export async function checkCredentials(email: string, password: string): Promise
       return false;
     }
 
-    const storedPassword = item.column_values[0].text;
+    // Extract column values
+    const columnValues = item.column_values;
+    const storedPassword = columnValues.find(col => col.id === PASSWORD_COLUMN_ID)?.text || '';
+    const firstName = columnValues.find(col => col.id === FIRST_NAME_COLUMN_ID)?.text || '';
+    const lastName = columnValues.find(col => col.id === LAST_NAME_COLUMN_ID)?.text || '';
 
     // First time login case: if database password is empty AND input is "RESTORE"
     if (!storedPassword && password === "RESTORE") {
@@ -319,7 +328,30 @@ export async function checkCredentials(email: string, password: string): Promise
     }
 
     // Normal login case: verify password matches stored password
-    return storedPassword === password;
+    const isValidCredentials = storedPassword === password;
+    
+    if (isValidCredentials) {
+      // Check if user exists in the database
+      const dbUser = await prisma.monday_users.findUnique({
+        where: { email }
+      });
+      
+      if (!dbUser) {
+        // Create user in the database if they don't exist
+        await prisma.monday_users.create({
+          data: {
+            monday_id: item.id,
+            email,
+            password: storedPassword,
+            first_name: firstName,
+            last_name: lastName
+          }
+        });
+        console.log(`Created new user in database: ${email}`);
+      }
+    }
+    
+    return isValidCredentials;
   } catch (error) {
     console.error('Error checking credentials:', error);
     throw error;
@@ -385,35 +417,42 @@ export async function changePassword(email: string, currentPassword: string, new
     }`;
 
     await api(mutation);
-    return { success: true };
+    
+    // Only update the Prisma database when running on the server
+    if (isServer) {
+      try {
+        // Also update the password in the Prisma database
+        const dbUser = await prisma.monday_users.findUnique({
+          where: { email }
+        });
+        
+        if (dbUser) {
+          // Update existing user's password
+          await prisma.monday_users.update({
+            where: { email },
+            data: { password: newPassword }
+          });
+        } else {
+          // Create user in the database if they don't exist
+          await prisma.monday_users.create({
+            data: {
+              monday_id: item.id,
+              email,
+              password: newPassword
+            }
+          });
+        }
+      } catch (dbError) {
+        console.error('Error updating password in database:', dbError);
+        // Continue even if database update fails
+        // The Monday.com update was successful
+      }
+    }
+    
+    return { success: true, mondayId: item.id };
   } catch (error) {
     console.error('Error changing password:', error);
     return { success: false, error: 'An error occurred while changing password' };
-  }
-}
-
-// Helper function to clear a column value
-export async function clearColumnValue(boardId: string, itemId: string, columnId: string): Promise<boolean> {
-  try {
-    const isServer = typeof window === 'undefined';
-    const api = isServer ? serverApi : monday.api;
-    
-    const mutation = `mutation {
-      change_simple_column_value(
-        board_id: ${boardId},
-        item_id: ${itemId},
-        column_id: "${columnId}",
-        value: ""
-      ) {
-        id
-      }
-    }`;
-
-    await api(mutation);
-    return true;
-  } catch (error) {
-    console.error('Error clearing column value:', error);
-    return false;
   }
 }
 
