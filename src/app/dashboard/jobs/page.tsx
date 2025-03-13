@@ -405,6 +405,8 @@ export default function JobsPage() {
   const [isGridView, setIsGridView] = useState(true);
   const [expandedJobIds, setExpandedJobIds] = useState<string[]>([]);
   const [itemsPerPage, setItemsPerPage] = useState(ITEMS_PER_PAGE);
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [expandAll, setExpandAll] = useState(false);
   
   const { 
     allJobs,
@@ -448,12 +450,23 @@ export default function JobsPage() {
     return filteredJobs.length;
   }, [filteredJobs]);
 
+  // Modified toggle function to handle individual job expansion
   const toggleJobExpansion = (jobId: string) => {
-    setExpandedJobIds(prev =>
-      prev.includes(jobId)
-        ? prev.filter(id => id !== jobId)
-        : [...prev, jobId]
-    );
+    if (isGridView) {
+      // In grid view, we don't close other cards when one is opened
+      setExpandedJobIds(prev => 
+        prev.includes(jobId)
+          ? prev.filter(id => id !== jobId)
+          : [...prev, jobId]
+      );
+    } else {
+      // In list view, maintain the same behavior
+      setExpandedJobIds(prev =>
+        prev.includes(jobId)
+          ? prev.filter(id => id !== jobId)
+          : [...prev, jobId]
+      );
+    }
   };
 
   // Calculate pagination for filtered results
@@ -462,6 +475,25 @@ export default function JobsPage() {
     const endIndex = startIndex + itemsPerPage;
     return filteredJobs.slice(startIndex, endIndex);
   }, [filteredJobs, currentPage, itemsPerPage]);
+
+  // Toggle all jobs expansion - moved after paginatedFilteredJobs declaration
+  const toggleExpandAll = useCallback(() => {
+    if (expandAll) {
+      // If currently expanded, collapse all
+      setExpandedJobIds([]);
+      setExpandAll(false);
+    } else {
+      // If currently collapsed, expand all visible jobs
+      setExpandedJobIds(paginatedFilteredJobs.map(job => job.id));
+      setExpandAll(true);
+    }
+  }, [expandAll, paginatedFilteredJobs]);
+
+  // Reset expand all state when page changes
+  useEffect(() => {
+    setExpandAll(false);
+    setExpandedJobIds([]);
+  }, [currentPage, itemsPerPage, searchQuery, selectedClassification]);
 
   // Calculate total pages for filtered results
   const filteredTotalPages = useMemo(() => {
@@ -516,8 +548,8 @@ export default function JobsPage() {
         <div className="mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="flex flex-col items-center space-y-4">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-              <p className="text-gray-500 dark:text-gray-400">Loading jobs...</p>
+              <Loader2 className="h-12 w-12 text-blue-500 dark:text-blue-400 animate-spin" />
+              <p className="text-gray-500 dark:text-gray-300">Loading jobs...</p>
             </div>
           </div>
         </div>
@@ -538,7 +570,7 @@ export default function JobsPage() {
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Job Board</h1>
               {session?.user?.email && (
-                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{session.user.email}</p>
+                <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{session.user.email}</p>
               )}
             </div>
             <SearchBar value={searchQuery} onChange={setSearchQuery} />
@@ -546,19 +578,6 @@ export default function JobsPage() {
 
           {/* Controls */}
           <div className="flex flex-col sm:flex-row gap-4 flex-wrap mb-6">
-            {/* <Link
-              href="/dashboard/jobs/fillout"
-              className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 
-                       text-sm font-medium rounded-lg text-gray-700 dark:text-gray-200 
-                       bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700
-                       shadow-sm transition-all duration-200 hover:shadow
-                       focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
-                       dark:focus:ring-offset-gray-900"
-            >
-              <Plus className="mr-2 h-5 w-5 text-gray-400" />
-              Add New Job
-            </Link> */}
-
             <button
               onClick={refreshJobs}
               disabled={isSyncing || isLoading}
@@ -567,24 +586,25 @@ export default function JobsPage() {
                        bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700
                        shadow-sm transition-all duration-200 hover:shadow
                        focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
-                       dark:focus:ring-offset-gray-900
+                       dark:focus:ring-offset-gray-900 dark:focus:ring-blue-400
                        disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSyncing ? (
-                <Loader2 className="mr-2 h-5 w-5 text-gray-400 animate-spin" />
+                <Loader2 className="mr-2 h-5 w-5 text-gray-400 dark:text-gray-300 animate-spin" />
               ) : (
-                <RefreshCcw className="mr-2 h-5 w-5 text-gray-400" />
+                <RefreshCcw className="mr-2 h-5 w-5 text-gray-400 dark:text-gray-300" />
               )}
               {isSyncing ? 'Syncing...' : 'Refresh Jobs'}
             </button>
-
           </div>
+          
           <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
             <ClassificationFilter
               value={selectedClassification}
               onChange={setSelectedClassification}
             />
           </div>
+          
           {/* Top controls bar */}
           <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
             {/* Items per page selector - Left */}
@@ -597,7 +617,7 @@ export default function JobsPage() {
             
             {/* Jobs count - Center */}
             <div className="w-full md:w-1/3 flex justify-center">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-gray-600 dark:text-gray-300">
                 Found {filteredTotal} jobs 
                 {filteredTotal > 0 && (
                   <span>
@@ -608,11 +628,28 @@ export default function JobsPage() {
               </p>
             </div>
             
-            {/* Grid/List toggle - Right */}
-            <div className="w-full md:w-1/3 flex justify-end">
+            {/* Grid/List toggle and Expand All - Right */}
+            <div className="w-full md:w-1/3 flex justify-end space-x-2">
+              {/* Expand All toggle */}
+              <button
+                onClick={toggleExpandAll}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors border border-gray-200 dark:border-gray-700
+                  ${expandAll
+                    ? 'bg-blue-500 text-white border-blue-500 dark:border-blue-600'
+                    : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  }`}
+              >
+                {expandAll ? 'Collapse All' : 'Expand All'}
+              </button>
+              
+              {/* View toggle */}
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-1">
                 <button
-                  onClick={() => setIsGridView(true)}
+                  onClick={() => {
+                    setIsGridView(true);
+                    setExpandAll(false);
+                    setExpandedJobIds([]);
+                  }}
                   className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                     isGridView
                       ? 'bg-blue-500 text-white'
@@ -622,7 +659,11 @@ export default function JobsPage() {
                   Grid
                 </button>
                 <button
-                  onClick={() => setIsGridView(false)}
+                  onClick={() => {
+                    setIsGridView(false);
+                    setExpandAll(false);
+                    setExpandedJobIds([]);
+                  }}
                   className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                     !isGridView
                       ? 'bg-blue-500 text-white'
@@ -638,7 +679,7 @@ export default function JobsPage() {
           {/* Jobs Grid/List */}
           {paginatedFilteredJobs.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-gray-600 dark:text-gray-300">
                 {searchQuery || selectedClassification ? 'No jobs found matching your search.' : 'No jobs found.'}
               </p>
             </div>

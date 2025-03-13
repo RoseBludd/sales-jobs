@@ -60,7 +60,7 @@ export const Pagination = ({
           onClick={() => onPageChange(i)}
           className={`w-10 h-10 flex items-center justify-center rounded-md text-sm font-medium transition-colors ${
             currentPage === i
-              ? 'bg-blue-600 text-white'
+              ? 'bg-blue-600 dark:bg-blue-700 text-white'
               : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
           }`}
           aria-current={currentPage === i ? 'page' : undefined}
@@ -97,7 +97,7 @@ export const Pagination = ({
             1
           </button>
           {startPage > 2 && (
-            <span className="w-10 h-10 flex items-center justify-center text-gray-500">...</span>
+            <span className="w-10 h-10 flex items-center justify-center text-gray-500 dark:text-gray-400">...</span>
           )}
         </>
       )}
@@ -115,7 +115,7 @@ export const Pagination = ({
           onBlur={handlePageInputSubmit}
           onKeyDown={handleKeyDown}
           className="w-14 h-10 px-2 text-center rounded-md border border-gray-300 dark:border-gray-600 
-                   text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                   text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 dark:bg-gray-700 dark:text-white"
           aria-label="Go to page"
         />
       </div>
@@ -126,7 +126,7 @@ export const Pagination = ({
       {endPage < totalPages && (
         <>
           {endPage < totalPages - 1 && (
-            <span className="w-10 h-10 flex items-center justify-center text-gray-500">...</span>
+            <span className="w-10 h-10 flex items-center justify-center text-gray-500 dark:text-gray-400">...</span>
           )}
           <button
             onClick={() => onPageChange(totalPages)}
