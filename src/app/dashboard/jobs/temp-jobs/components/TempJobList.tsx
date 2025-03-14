@@ -27,12 +27,12 @@ export function TempJobList({
   if (jobs.length === 0) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-        <div className="p-6">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100">
+        <div className="p-4 sm:p-6">
+          <h2 className="text-xl font-semibold mb-3 sm:mb-4 text-gray-800 dark:text-gray-100">
             Potential Customers
           </h2>
           
-          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+          <div className="text-center py-6 sm:py-8 text-gray-500 dark:text-gray-400">
             {searchQuery 
               ? <div className="flex flex-col items-center">
                   <Search className="h-12 w-12 mb-3 text-gray-400" />
@@ -52,9 +52,9 @@ export function TempJobList({
   
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-      <div className="p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
+      <div className="p-3 sm:p-6">
+        <div className="flex justify-between items-center mb-3 sm:mb-4">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-100">
             Potential Customers ({jobs.length})
           </h2>
           <div className="text-sm text-gray-500 dark:text-gray-400">
@@ -65,109 +65,115 @@ export function TempJobList({
         </div>
         
         {viewMode === 'list' ? (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead>
-                <tr>
-                  <th className="px-3 py-3 text-left">
-                    <div className="flex items-center">
-                      <button
-                        onClick={onSelectAll}
-                        className="focus:outline-none text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                        aria-label={selectedJobs.length === jobs.length ? "Deselect all" : "Select all"}
-                      >
-                        {selectedJobs.length === jobs.length && jobs.length > 0 ? (
-                          <CheckSquare className="h-5 w-5 text-blue-500" />
-                        ) : (
-                          <Square className="h-5 w-5" />
-                        )}
-                      </button>
-                    </div>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Job Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Customer</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Contact</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Created</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {jobs.map(job => (
-                  <tr 
-                    key={job.id} 
-                    className={`transition-colors cursor-pointer
-                                ${selectedJobs.includes(job.id) 
-                                  ? 'bg-blue-50 dark:bg-blue-900/20' 
-                                  : 'bg-white dark:bg-gray-800'}
-                                hover:bg-gray-100 dark:hover:bg-gray-700
-                                ${job.isSubmitted ? 'opacity-75' : ''}`}
-                    onClick={() => onToggleSelect(job.id)}
-                  >
-                    <td className="px-3 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        onClick={() => onToggleSelect(job.id)}
-                        className="focus:outline-none text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                        aria-label={selectedJobs.includes(job.id) ? "Deselect" : "Select"}
-                      >
-                        {selectedJobs.includes(job.id) ? (
-                          <CheckSquare className="h-5 w-5 text-blue-500" />
-                        ) : (
-                          <Square className="h-5 w-5" />
-                        )}
-                      </button>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{job.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">{job.customerFullName || '-'}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
-                      {job.customerEmail || job.customerPhone || '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">{formatDate(job.createdAt)}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {job.isSubmitted ? (
-                        <span className="flex items-center text-green-600 dark:text-green-400">
-                          <CheckCircle2 className="h-4 w-4 mr-1" />
-                          Submitted
-                        </span>
-                      ) : (
-                        <span className="text-gray-700 dark:text-gray-300">Pending</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex space-x-3">
+          <div className="-mx-3 sm:mx-0 -my-1 sm:my-0">
+            <div className="overflow-x-auto pb-2">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-800/60">
+                  <tr>
+                    <th className="px-2 sm:px-3 py-3 text-left">
+                      <div className="flex items-center">
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onEdit(job);
-                          }}
-                          className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
-                          aria-label="Edit job"
+                          onClick={onSelectAll}
+                          className="focus:outline-none text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                          aria-label={selectedJobs.length === jobs.length ? "Deselect all" : "Select all"}
                         >
-                          <Edit className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onDelete(job.id);
-                          }}
-                          className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors"
-                          aria-label="Delete job"
-                        >
-                          <Trash2 className="h-4 w-4" />
+                          {selectedJobs.length === jobs.length && jobs.length > 0 ? (
+                            <CheckSquare className="h-5 w-5 text-blue-500" />
+                          ) : (
+                            <Square className="h-5 w-5" />
+                          )}
                         </button>
                       </div>
-                    </td>
+                    </th>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Customer</th>
+                    <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Contact</th>
+                    <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Created</th>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {jobs.map(job => (
+                    <tr 
+                      key={job.id} 
+                      className={`transition-colors cursor-pointer
+                                  ${selectedJobs.includes(job.id) 
+                                    ? 'bg-blue-50 dark:bg-blue-900/20' 
+                                    : 'bg-white dark:bg-gray-800'}
+                                  hover:bg-gray-100 dark:hover:bg-gray-700
+                                  ${job.isSubmitted ? 'opacity-75' : ''}`}
+                      onClick={() => onToggleSelect(job.id)}
+                    >
+                      <td className="px-2 sm:px-3 py-3 sm:py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => onToggleSelect(job.id)}
+                          className="focus:outline-none text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                          aria-label={selectedJobs.includes(job.id) ? "Deselect" : "Select"}
+                        >
+                          {selectedJobs.includes(job.id) ? (
+                            <CheckSquare className="h-5 w-5 text-blue-500" />
+                          ) : (
+                            <Square className="h-5 w-5" />
+                          )}
+                        </button>
+                      </td>
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{job.name}</td>
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">{job.customerFullName || '-'}</td>
+                      <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                        {job.customerEmail || job.customerPhone || '-'}
+                      </td>
+                      <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">{formatDate(job.createdAt)}</td>
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-sm">
+                        {job.isSubmitted ? (
+                          <span className="flex items-center text-green-600 dark:text-green-400">
+                            <CheckCircle2 className="h-4 w-4 mr-1" />
+                            <span className="hidden sm:inline">Submitted</span>
+                            <span className="sm:hidden">✓</span>
+                          </span>
+                        ) : (
+                          <span className="text-gray-700 dark:text-gray-300">
+                            <span className="hidden sm:inline">Pending</span>
+                            <span className="sm:hidden">-</span>
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex space-x-2 sm:space-x-3">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onEdit(job);
+                            }}
+                            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+                            aria-label="Edit job"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDelete(job.id);
+                            }}
+                            className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors"
+                            aria-label="Delete job"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             {jobs.map(job => (
               <div 
                 key={job.id} 
-                className={`relative border border-gray-200 dark:border-gray-700 rounded-lg p-4 
+                className={`relative border border-gray-200 dark:border-gray-700 rounded-lg p-3 sm:p-4 
                            transition-all duration-200 cursor-pointer
                            ${selectedJobs.includes(job.id) 
                              ? 'bg-blue-50 dark:bg-blue-900/20' 
@@ -191,20 +197,20 @@ export function TempJobList({
                 </div>
                 
                 <div className="ml-8">
-                  <div className="flex justify-between items-start">
-                    <h3 className="font-medium text-gray-900 dark:text-white">{job.name}</h3>
+                  <div className="flex flex-wrap justify-between items-start gap-2">
+                    <h3 className="font-medium text-gray-900 dark:text-white break-words pr-2">{job.name}</h3>
                     {job.isSubmitted && (
-                      <span className="inline-flex items-center text-xs font-medium px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                      <span className="inline-flex items-center text-xs font-medium px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 whitespace-nowrap">
                         <CheckCircle2 className="h-3 w-3 mr-1" />
                         Submitted
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mt-1 break-words">
                     {job.customerFullName}
                   </p>
                   
-                  <div className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+                  <div className="mt-2 sm:mt-3 text-xs text-gray-500 dark:text-gray-400">
                     {job.customerEmail && (
                       <p className="truncate">{job.customerEmail}</p>
                     )}
@@ -214,7 +220,7 @@ export function TempJobList({
                     <p className="mt-1">Added {formatDate(job.createdAt)}</p>
                   </div>
                   
-                  <div className="mt-3 flex space-x-2" onClick={(e) => e.stopPropagation()}>
+                  <div className="mt-2 sm:mt-3 flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();

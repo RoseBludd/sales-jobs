@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, UploadCloud, Loader2, Check } from 'lucide-react';
+import { ArrowLeft, UploadCloud, Loader2, Check, Plus, Search, X, Filter } from 'lucide-react';
 import { TempJob } from './types';
 import { TempJobForm } from './components/TempJobForm';
 import { TempJobList } from './components/TempJobList';
@@ -16,6 +16,7 @@ export default function TempJobsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const [newJob, setNewJob] = useState<Omit<TempJob, 'id' | 'createdAt'>>({
     name: '',
     customerId: '',
@@ -43,6 +44,7 @@ export default function TempJobsPage() {
   const [editingJob, setEditingJob] = useState<TempJob | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [showSubmitted, setShowSubmitted] = useState(true);
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
   // Load temp jobs from API on component mount
   useEffect(() => {
@@ -115,6 +117,46 @@ export default function TempJobsPage() {
     }
   };
 
+  const handleOpenAddForm = () => {
+    setEditingJob(null);
+    setIsFormOpen(true);
+  };
+  
+  const handleEditJob = (job: TempJob) => {
+    setEditingJob(job);
+    setIsFormOpen(true);
+  };
+  
+  const handleCloseForm = () => {
+    setIsFormOpen(false);
+    setEditingJob(null);
+    // Reset new job form
+    setNewJob({
+      name: '',
+      customerId: '',
+      salesRepId: '',
+      mainRepEmail: '',
+      isNewCustomer: false,
+      customerFullName: '',
+      customerFirstName: '',
+      customerLastName: '',
+      customerPhone: '',
+      customerEmail: '',
+      customerAddress: '',
+      referredBy: '',
+      customerNotes: '',
+      isCustomerAddressMatchingJob: false,
+      projectAddress: '',
+      roofType: '',
+      isSplitJob: false,
+      splitPercentage: 0,
+      projectNotes: '',
+      businessName: '',
+      companyName: '',
+      isSubmitted: false
+    });
+  };
+
   const handleSaveNewJob = async () => {
     if (!newJob.name.trim()) {
       toast.error('Job Name is required');
@@ -159,34 +201,11 @@ export default function TempJobsPage() {
       }
       
       setTempJobs([savedJob, ...tempJobs]);
-      toast.success('Job saved successfully!');
-      setNewJob({
-        name: '',
-        customerId: '',
-        salesRepId: '',
-        mainRepEmail: '',
-        isNewCustomer: false,
-        customerFullName: '',
-        customerFirstName: '',
-        customerLastName: '',
-        customerPhone: '',
-        customerEmail: '',
-        customerAddress: '',
-        referredBy: '',
-        customerNotes: '',
-        isCustomerAddressMatchingJob: false,
-        projectAddress: '',
-        roofType: '',
-        isSplitJob: false,
-        splitPercentage: 0,
-        projectNotes: '',
-        businessName: '',
-        companyName: '',
-        isSubmitted: false
-      });
+      toast.success('Potential customer added successfully!');
+      handleCloseForm();
     } catch (error) {
       console.error('Error saving job:', error);
-      toast.error('Failed to save job');
+      toast.error('Failed to save potential customer');
     }
   };
 
@@ -236,16 +255,16 @@ export default function TempJobsPage() {
       }
       
       setTempJobs(tempJobs.map(job => job.id === updatedJob.id ? updatedJob : job));
-      toast.success('Job updated successfully!');
-      setEditingJob(null);
+      toast.success('Potential customer updated successfully!');
+      handleCloseForm();
     } catch (error) {
       console.error('Error updating job:', error);
-      toast.error('Failed to update job');
+      toast.error('Failed to update potential customer');
     }
   };
 
   const handleDeleteJob = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this temporary job?')) {
+    if (window.confirm('Are you sure you want to delete this potential customer?')) {
       try {
         const response = await fetch(`/api/temp-jobs/${id}`, {
           method: 'DELETE',
@@ -260,11 +279,12 @@ export default function TempJobsPage() {
         setSelectedJobs(selectedJobs.filter(jobId => jobId !== id));
         if (editingJob?.id === id) {
           setEditingJob(null);
+          setIsFormOpen(false);
         }
-        toast.success('Job deleted successfully');
+        toast.success('Potential customer deleted successfully');
       } catch (error) {
         console.error('Error deleting job:', error);
-        toast.error('Failed to delete job');
+        toast.error('Failed to delete potential customer');
       }
     }
   };
@@ -287,7 +307,7 @@ export default function TempJobsPage() {
 
   const handleSubmitToMakeWebhook = async () => {
     if (selectedJobs.length === 0) {
-      toast.error('Please select at least one job to submit');
+      toast.error('Please select at least one potential customer to submit');
       return;
     }
 
@@ -309,7 +329,7 @@ export default function TempJobsPage() {
         throw new Error(errorData.error || `Error: ${response.status}`);
       }
 
-      toast.success('Jobs submitted successfully!');
+      toast.success('Potential customers submitted successfully!');
       
       // If keeping jobs, update them as submitted in the local state
       setTempJobs(prevJobs => 
@@ -321,7 +341,7 @@ export default function TempJobsPage() {
       );
       
       // Optionally remove submitted jobs from temp jobs
-      if (window.confirm('Would you like to remove the submitted jobs from your list?')) {
+      if (window.confirm('Would you like to remove the submitted potential customers from your list?')) {
         // Delete jobs from database
         const deleteResponse = await fetch('/api/temp-jobs/submit', {
           method: 'POST',
@@ -338,7 +358,7 @@ export default function TempJobsPage() {
           // Update local state
           setTempJobs(tempJobs.filter(job => !selectedJobs.includes(job.id)));
           setSelectedJobs([]);
-          toast.success('Submitted jobs removed from list');
+          toast.success('Submitted potential customers removed from list');
         }
       } else {
         // Clear selection
@@ -346,7 +366,7 @@ export default function TempJobsPage() {
       }
     } catch (error) {
       console.error('Error submitting jobs:', error);
-      toast.error('Failed to submit jobs. Please try again.');
+      toast.error('Failed to submit potential customers. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -398,11 +418,49 @@ export default function TempJobsPage() {
           },
         }}
       />
-      <main className="p-6">
+
+      {/* Modal for adding/editing jobs */}
+      {isFormOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen p-4 text-center sm:p-0">
+            <div 
+              className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75 dark:bg-opacity-90"
+              onClick={handleCloseForm}
+              aria-hidden="true"
+            ></div>
+
+            <div className="relative inline-block w-full max-w-3xl px-4 pt-5 pb-4 overflow-hidden text-left align-bottom transition-all transform bg-white dark:bg-gray-800 rounded-lg shadow-xl sm:my-8 sm:align-middle sm:p-6">
+              <div className="absolute top-0 right-0 pt-4 pr-4">
+                <button
+                  type="button"
+                  className="text-gray-400 bg-white dark:bg-gray-800 rounded-md hover:text-gray-500 dark:hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800"
+                  onClick={handleCloseForm}
+                >
+                  <span className="sr-only">Close</span>
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              
+              <div className="mt-4 sm:mt-0">
+                <TempJobForm
+                  editingJob={editingJob}
+                  newJob={newJob}
+                  onInputChange={handleInputChange}
+                  onBooleanChange={handleBooleanChange}
+                  onSave={editingJob ? handleUpdateJob : handleSaveNewJob}
+                  onCancel={handleCloseForm}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <main className="p-4 sm:p-6">
         <div className="w-full">
           {/* Header */}
-          <div className="flex flex-wrap items-center justify-between mb-6 gap-4">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <Link
                 href="/dashboard/jobs"
                 className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 
@@ -416,129 +474,177 @@ export default function TempJobsPage() {
                 <ArrowLeft className="h-5 w-5 mr-2 text-gray-400 dark:text-gray-500" />
                 Back to Jobs
               </Link>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
                 Potential Customers
               </h1>
             </div>
             
-            <div className="flex flex-wrap gap-2">
-              <div className="relative">
+            <button
+              onClick={handleOpenAddForm}
+              className="inline-flex items-center justify-center w-full sm:w-auto px-4 py-2 text-sm font-medium rounded-md
+                        text-white bg-blue-600 hover:bg-blue-700
+                        focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
+                        dark:focus:ring-offset-gray-900 transition-colors duration-200"
+            >
+              <Plus className="h-5 w-5 mr-2" />
+              Add Potential Customer
+            </button>
+          </div>
+
+          {/* Filters and controls */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 sm:p-4 mb-4 sm:mb-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="relative w-full sm:flex-1 sm:min-w-[240px]">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-5 w-5 text-gray-400" />
+                </div>
                 <input
                   type="text"
-                  placeholder="Search jobs..."
+                  placeholder="Search by name, email, or phone..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="px-4 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-md
+                  className="w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded-md
                            shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500
                            dark:bg-gray-700 dark:text-white text-sm"
                 />
-                <span className="absolute right-3 top-2.5 text-gray-400">
-                  {searchQuery && (
-                    <button 
-                      onClick={() => setSearchQuery('')}
-                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-                    >
-                      ✕
-                    </button>
-                  )}
-                </span>
-              </div>
-
-              <div className="flex items-center">
-                <label className="flex items-center text-sm text-gray-700 dark:text-gray-300">
-                  <input
-                    type="checkbox"
-                    checked={showSubmitted}
-                    onChange={(e) => setShowSubmitted(e.target.checked)}
-                    className="mr-2 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  Show Submitted Jobs
-                </label>
+                {searchQuery && (
+                  <button 
+                    onClick={() => setSearchQuery('')}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                )}
               </div>
               
-              <div className="flex">
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`px-3 py-2 text-sm font-medium rounded-l-md
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                <div className="flex items-center">
+                  <label className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+                    <input
+                      type="checkbox"
+                      checked={showSubmitted}
+                      onChange={(e) => setShowSubmitted(e.target.checked)}
+                      className="mr-2 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    Show Submitted
+                  </label>
+                </div>
+                
+                <div className="flex h-9">
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`px-3 py-1.5 text-sm font-medium rounded-l-md
                             focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
-                            ${viewMode === 'list' 
-                              ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600'
+                            border ${viewMode === 'list' 
+                              ? 'bg-blue-600 hover:bg-blue-700 border-blue-600 text-white' 
+                              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600'
                             }`}
-                >
-                  List
-                </button>
-                <button
-                  onClick={() => setViewMode('grid')}
-                  className={`px-3 py-2 text-sm font-medium rounded-r-md
+                  >
+                    List
+                  </button>
+                  <button
+                    onClick={() => setViewMode('grid')}
+                    className={`px-3 py-1.5 text-sm font-medium rounded-r-md
                             focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
-                            ${viewMode === 'grid' 
-                              ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-y border-r border-gray-300 dark:border-gray-600'
+                            border ${viewMode === 'grid' 
+                              ? 'bg-blue-600 hover:bg-blue-700 border-blue-600 text-white' 
+                              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-y border-r border-gray-300 dark:border-gray-600'
                             }`}
-                >
-                  Grid
-                </button>
-              </div>
-              
-              <button
-                onClick={handleSubmitToMakeWebhook}
-                disabled={selectedJobs.length === 0 || isSubmitting}
-                className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-md
+                  >
+                    Grid
+                  </button>
+                </div>
+                
+                <button
+                  onClick={handleSubmitToMakeWebhook}
+                  disabled={selectedJobs.length === 0 || isSubmitting}
+                  className={`inline-flex items-center px-3 sm:px-4 py-2 text-sm font-medium rounded-md
                            focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500
-                           transition-colors duration-200
+                           transition-colors duration-200 whitespace-nowrap ml-auto
                            ${selectedJobs.length > 0 && !isSubmitting
                             ? 'bg-green-600 hover:bg-green-700 text-white' 
                             : 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
                            }`}
-              >
-                {isSubmitting ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <UploadCloud className="h-4 w-4 mr-2" />
-                )}
-                {isSubmitting ? 'Submitting...' : 'Submit Selected'}
-                {selectedJobs.length > 0 && !isSubmitting && ` (${selectedJobs.length})`}
-              </button>
+                >
+                  {isSubmitting ? (
+                    <Loader2 className="h-4 w-4 mr-1 sm:mr-2 animate-spin" />
+                  ) : (
+                    <UploadCloud className="h-4 w-4 mr-1 sm:mr-2" />
+                  )}
+                  {isSubmitting ? 'Submitting...' : 'Submit Selected'}
+                  {selectedJobs.length > 0 && !isSubmitting && ` (${selectedJobs.length})`}
+                </button>
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Main content area - 2/3 width on large screens */}
-            <div className="lg:col-span-2 space-y-6">
-              {isLoading ? (
-                <div className="flex justify-center items-center h-64">
-                  <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-                  <span className="ml-2 text-gray-600 dark:text-gray-300">Loading jobs...</span>
-                </div>
-              ) : (
-                <TempJobList
-                  jobs={filteredJobs}
-                  selectedJobs={selectedJobs}
-                  onToggleSelect={handleToggleSelect}
-                  onSelectAll={handleSelectAll}
-                  onEdit={setEditingJob}
-                  onDelete={handleDeleteJob}
-                  formatDate={formatDate}
-                  viewMode={viewMode}
-                  searchQuery={searchQuery}
-                />
-              )}
-            </div>
-            
-            {/* Form area - 1/3 width on large screens */}
-            <div className="lg:col-span-1 space-y-6">
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 sticky top-6">
-                <TempJobForm
-                  editingJob={editingJob}
-                  newJob={newJob}
-                  onInputChange={handleInputChange}
-                  onBooleanChange={handleBooleanChange}
-                  onSave={editingJob ? handleUpdateJob : handleSaveNewJob}
-                  onCancel={() => setEditingJob(null)}
-                />
+          {/* Main content area - full width */}
+          <div className="space-y-4 sm:space-y-6">
+            {isLoading ? (
+              <div className="flex justify-center items-center h-64 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                <span className="ml-2 text-gray-600 dark:text-gray-300">Loading potential customers...</span>
               </div>
-            </div>
+            ) : (
+              <>
+                {filteredJobs.length === 0 ? (
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-8">
+                    <div className="text-center py-8 sm:py-12">
+                      {searchQuery ? (
+                        <div className="flex flex-col items-center">
+                          <Search className="h-12 sm:h-16 w-12 sm:w-16 mb-3 sm:mb-4 text-gray-400" />
+                          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No results found</h3>
+                          <p className="text-gray-500 dark:text-gray-400">
+                            No matches found for "<span className="font-medium">{searchQuery}</span>"
+                          </p>
+                          <button 
+                            onClick={() => setSearchQuery('')}
+                            className="mt-4 px-4 py-2 text-sm font-medium rounded-md bg-gray-100 dark:bg-gray-700 
+                                    text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 
+                                    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
+                                    transition-colors duration-200"
+                          >
+                            Clear search
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center">
+                          <div className="rounded-full bg-blue-100 dark:bg-blue-900/30 p-3 mb-4">
+                            <Plus className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                          </div>
+                          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No potential customers yet</h3>
+                          <p className="text-gray-500 dark:text-gray-400 mb-6">
+                            Get started by adding your first potential customer
+                          </p>
+                          <button
+                            onClick={handleOpenAddForm}
+                            className="px-4 py-2 text-sm font-medium rounded-md
+                                    text-white bg-blue-600 hover:bg-blue-700
+                                    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
+                                    transition-colors duration-200"
+                          >
+                            <Plus className="h-5 w-5 inline mr-1" />
+                            Add Potential Customer
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <TempJobList
+                    jobs={filteredJobs}
+                    selectedJobs={selectedJobs}
+                    onToggleSelect={handleToggleSelect}
+                    onSelectAll={handleSelectAll}
+                    onEdit={handleEditJob}
+                    onDelete={handleDeleteJob}
+                    formatDate={formatDate}
+                    viewMode={viewMode}
+                    searchQuery={searchQuery}
+                  />
+                )}
+              </>
+            )}
           </div>
         </div>
       </main>
