@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "test:ews": "node scripts/test-ews.js"
@@ -20,6 +20,7 @@
     "dotenv": "^16.4.7",
     "ews-javascript-api": "^0.15.3",
     "fast-xml-parser": "^5.0.8",
+    "framer-motion": "^12.5.0",
     "ical": "^0.8.0",
     "lucide-react": "^0.477.0",
     "mailparser": "^3.7.2",

@@ -19,7 +19,7 @@ const EmailSidebarContent = () => {
     allEmails,
     isLoading,
     setShowCompose,
-    openComposeModal
+    handleSetShowCompose
   } = useEmailContext();
   
   // Count unread emails for each folder
@@ -42,8 +42,8 @@ const EmailSidebarContent = () => {
           className="w-full flex items-center justify-center p-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transform hover:scale-[1.02] transition-all duration-200 shadow-sm hover:shadow-md mb-6"
           onClick={() => {
             console.log('Sidebar compose button clicked');
-            // Use the openComposeModal method from context
-            openComposeModal();
+            // Use the handleSetShowCompose method from context
+            handleSetShowCompose(true);
             // Also dispatch the event as a backup
             const event = new CustomEvent('showComposeModal');
             console.log('Dispatching showComposeModal event:', event);

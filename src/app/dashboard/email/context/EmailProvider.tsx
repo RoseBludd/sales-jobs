@@ -1,199 +1,249 @@
-'use client';
+/**
+ * Email Context Provider
+ * This component provides a central state management for emails 
+ * and related functionality to all email components.
+ */
 
-import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useRef } from 'react';
+"use client";
+
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { Email } from '../types';
-import { useEmailCache } from '../services/useEmailCache';
+import useDbEmailCache from '../services/useDbEmailCache';
+import { useSession } from 'next-auth/react';
 
-// Create the email context
-export const EmailContext = createContext<{
+// Define the context interface
+interface EmailContextType {
+  // Email data
   allEmails: Email[];
+  filteredEmails: Email[];
   paginatedEmails: Email[];
-  showCompose: boolean;
-  setShowCompose: (show: boolean) => void;
-  openComposeModal: () => void;
+  totalEmails: number;
   isLoading: boolean;
-  setIsLoading: (loading: boolean) => void;
-  selectedEmail: string | null;
-  setSelectedEmail: (emailId: string | null) => void;
   error: string | null;
   setError: (error: string | null) => void;
-  totalEmails: number;
-  currentPage: number;
-  totalPages: number;
-  itemsPerPage: number;
-  setItemsPerPage: (size: number) => void;
-  changePage: (page: number) => void;
-  searchQuery: string;
-  searchEmails: (query: string) => void;
-  fetchEmailById: (id: string, sync?: boolean) => Promise<Email>;
-  refreshEmails: (forceRefresh?: boolean) => Promise<void>;
-  updateEmail: (email: Email) => void;
-  removeEmail: (emailId: string) => void;
-  addEmail: (email: Email) => void;
-  moveEmail: (emailId: string, toFolder: 'inbox' | 'sent' | 'draft' | 'trash' | 'spam') => void;
+  
+  // Selected email and compose state
+  selectedEmail: Email | null;
+  showCompose: boolean;
+  setShowCompose: (show: boolean) => void;
+  composeEmailData: Partial<Email> | null;
+  lastSynced: Date | null;
+  
+  // Folder and UI state
   currentFolder: 'inbox' | 'sent' | 'draft' | 'trash' | 'spam';
   setCurrentFolder: (folder: 'inbox' | 'sent' | 'draft' | 'trash' | 'spam') => void;
+  
+  // Search and pagination
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  currentPage: number;
+  setCurrentPage: (page: number) => void;
+  itemsPerPage: number;
+  setItemsPerPage: (count: number) => void;
+  totalPages: number;
+  changePage: (page: number) => void;
+  
+  // Email notifications
   hasNewEmails: boolean;
   newEmailsCount: number;
   syncingEmails: boolean;
-  checkForNewEmails: () => Promise<void>;
-}>({
+  
+  // Actions
+  refreshEmails: (forceRefresh?: boolean) => Promise<void>;
+  checkForNewEmails: () => Promise<{hasNewEmails: boolean; newCount: number}>;
+  fetchEmailById: (id: string, forceRefresh?: boolean) => Promise<Email>;
+  setSelectedEmail: (email: Email | null) => void;
+  handleSetShowCompose: (show: boolean, emailData?: Partial<Email>) => void;
+  updateEmail: (email: Email) => void;
+  removeEmail: (emailId: string) => void;
+  addEmail: (email: Email) => void;
+  moveEmail: (emailId: string, toFolder: 'inbox' | 'sent' | 'draft' | 'trash' | 'spam') => Promise<void>;
+  searchEmails: (query: string) => void;
+}
+
+// Create context with default values
+const EmailContext = createContext<EmailContextType>({
+  // Default values would go here, but we're using a non-null assertion in the provider
   allEmails: [],
+  filteredEmails: [],
   paginatedEmails: [],
-  showCompose: false,
-  setShowCompose: () => {},
-  openComposeModal: () => {},
-  isLoading: false,
-  setIsLoading: () => {},
-  selectedEmail: null,
-  setSelectedEmail: () => {},
+  totalEmails: 0,
+  isLoading: true,
   error: null,
   setError: () => {},
-  totalEmails: 0,
-  currentPage: 1,
-  totalPages: 1,
-  itemsPerPage: 10,
-  setItemsPerPage: () => {},
-  changePage: () => {},
-  searchQuery: '',
-  searchEmails: () => {},
-  fetchEmailById: async () => ({ id: 0, folder: 'inbox', from: '', fromName: '', to: '', subject: '', body: '', date: '', isRead: false, isStarred: false }),
-  refreshEmails: async () => {},
-  updateEmail: () => {},
-  removeEmail: () => {},
-  addEmail: () => {},
-  moveEmail: () => {},
+  selectedEmail: null,
+  showCompose: false,
+  setShowCompose: () => {},
+  composeEmailData: null,
+  lastSynced: null,
   currentFolder: 'inbox',
   setCurrentFolder: () => {},
+  searchQuery: '',
+  setSearchQuery: () => {},
+  currentPage: 1,
+  setCurrentPage: () => {},
+  itemsPerPage: 10,
+  setItemsPerPage: () => {},
+  totalPages: 0,
+  changePage: () => {},
   hasNewEmails: false,
   newEmailsCount: 0,
   syncingEmails: false,
-  checkForNewEmails: async () => {},
+  refreshEmails: async () => {},
+  checkForNewEmails: async () => ({ hasNewEmails: false, newCount: 0 }),
+  fetchEmailById: async () => ({} as Email),
+  setSelectedEmail: () => {},
+  handleSetShowCompose: () => {},
+  updateEmail: () => {},
+  removeEmail: () => {},
+  addEmail: () => {},
+  moveEmail: async () => {},
+  searchEmails: () => {}
 });
 
-// Custom hook to use the email context
-export const useEmailContext = () => useContext(EmailContext);
-
-interface EmailProviderProps {
-  children: ReactNode;
-}
-
-export const EmailProvider = ({ children }: EmailProviderProps) => {
-  const [showCompose, setShowCompose] = useState(false);
-  const [selectedEmail, setSelectedEmail] = useState<string | null>(null);
+// Define Provider component
+export const EmailProvider = ({ children }: { children: React.ReactNode }) => {
+  // Track selected email and compose state
+  const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
+  const [showCompose, setShowCompose] = useState<boolean>(false);
+  const [composeEmailData, setComposeEmailData] = useState<Partial<Email> | null>(null);
   const [currentFolder, setCurrentFolder] = useState<'inbox' | 'sent' | 'draft' | 'trash' | 'spam'>('inbox');
+  // Add missing error state
+  const [localError, setLocalError] = useState<string | null>(null);
   
-  // Use the email cache hook with updated signature
+  // Use our email cache hook
   const {
     allEmails,
+    filteredEmails,
     paginatedEmails,
+    totalEmails,
     loading: isLoading,
     error,
-    totalEmails,
-    currentPage,
-    totalPages,
-    itemsPerPage,
+    lastSynced,
     searchQuery,
+    setSearchQuery,
+    currentPage,
+    setCurrentPage,
+    itemsPerPage,
+    setItemsPerPage,
+    fetchEmails: refreshEmails,
+    fetchEmailById,
+    checkNewEmails: checkForNewEmails,
+    updateEmail,
+    removeEmail,
+    addEmail,
+    moveEmail
+  } = useDbEmailCache(currentFolder);
+  
+  // Calculate total pages
+  const totalPages = Math.ceil(totalEmails / itemsPerPage) || 1;
+  
+  // Function to change page with validation
+  const changePage = useCallback((page: number) => {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+  }, [totalPages, setCurrentPage]);
+  
+  // Search emails function
+  const searchEmails = useCallback((query: string) => {
+    setSearchQuery(query);
+    setCurrentPage(1); // Reset to first page when searching
+  }, [setSearchQuery, setCurrentPage]);
+  
+  // Map error from hook to local error state
+  useEffect(() => {
+    if (error) {
+      setLocalError(error instanceof Error ? error.message : String(error));
+    }
+  }, [error]);
+  
+  // Set error function
+  const setError = useCallback((errorMessage: string | null) => {
+    setLocalError(errorMessage);
+  }, []);
+
+  // Handle setting compose state
+  const handleSetShowCompose = useCallback((show: boolean, emailData?: Partial<Email>) => {
+    setShowCompose(show);
+    setComposeEmailData(emailData || null);
+  }, []);
+  
+  // Open compose modal with pre-filled data
+  const openComposeModal = useCallback((emailData?: Partial<Email>) => {
+    handleSetShowCompose(true, emailData);
+  }, [handleSetShowCompose]);
+  
+  // Check for new emails periodically
+  useEffect(() => {
+    // Check for new emails every 2 minutes
+    const interval = setInterval(() => {
+      checkForNewEmails().then(({ hasNewEmails, newCount }) => {
+        if (hasNewEmails) {
+          console.log(`Found ${newCount} new emails`);
+        }
+      });
+    }, 2 * 60 * 1000);
+    
+    return () => clearInterval(interval);
+  }, [checkForNewEmails, currentFolder]);
+  
+  // Log any errors
+  useEffect(() => {
+    if (localError) {
+      console.error('Email error:', localError);
+    }
+  }, [localError]);
+  
+  // Simulate new email notifications for now
+  const [hasNewEmails, setHasNewEmails] = useState(false);
+  const [newEmailsCount, setNewEmailsCount] = useState(0);
+  const [syncingEmails, setSyncingEmails] = useState(false);
+  
+  // The context value
+  const contextValue: EmailContextType = {
+    allEmails,
+    filteredEmails,
+    paginatedEmails,
+    totalEmails,
+    isLoading,
+    error: localError,
+    setError,
+    selectedEmail,
+    showCompose,
+    setShowCompose,
+    composeEmailData,
+    lastSynced,
+    currentFolder,
+    setCurrentFolder,
+    searchQuery,
+    setSearchQuery,
+    currentPage,
+    setCurrentPage,
+    itemsPerPage,
+    setItemsPerPage,
+    totalPages,
+    changePage,
+    hasNewEmails,
+    newEmailsCount,
+    syncingEmails,
     refreshEmails,
-    getEmail: fetchEmailById,
+    checkForNewEmails,
+    fetchEmailById,
+    setSelectedEmail,
+    handleSetShowCompose,
     updateEmail,
     removeEmail,
     addEmail,
     moveEmail,
-    clearAllCache,
-    searchEmails,
-    changePage,
-    setItemsPerPage,
-    hasNewEmails,
-    newEmailsCount,
-    syncingEmails
-  } = useEmailCache({
-    folder: currentFolder,
-    initialLoad: true,
-    syncInterval: 60000 // Check for new emails every minute
-  });
-
-  // Function to set loading state (for compatibility with existing code)
-  const setIsLoading = useCallback((loading: boolean) => {
-    // This is a no-op since loading is now managed by the useEmailCache hook
-    console.log('setIsLoading is deprecated, loading is now managed by useEmailCache');
-  }, []);
-
-  // Function to set error state (for compatibility with existing code)
-  const setError = useCallback((newError: string | null) => {
-    // This is a no-op since error is now managed by the useEmailCache hook
-    console.log('setError is deprecated, error is now managed by useEmailCache');
-  }, []);
-
-  // Function to toggle compose visibility
-  const handleSetShowCompose = (show: boolean) => {
-    console.log('Setting showCompose to:', show);
-    setShowCompose(show);
+    searchEmails
   };
-
-  // Function to open compose modal
-  const openComposeModal = () => {
-    setShowCompose(true);
-  };
-
-  // Function to manually check for new emails
-  const checkForNewEmails = useCallback(async () => {
-    try {
-      await refreshEmails(true); // Force refresh to check for new emails
-    } catch (err) {
-      console.error('Error checking for new emails:', err);
-    }
-  }, [refreshEmails]);
-
-  // Effect to refresh emails when folder changes
-  useEffect(() => {
-    // Only refresh when folder changes
-    console.log(`Folder changed to: ${currentFolder}, refreshing emails`);
-    refreshEmails(true).catch(err => {
-      console.error('Error refreshing emails after folder change:', err);
-    });
-    
-    // Reset selected email when changing folders
-    setSelectedEmail(null);
-  }, [currentFolder, refreshEmails]);
-
+  
   return (
-    <EmailContext.Provider
-      value={{
-        allEmails,
-        paginatedEmails,
-        showCompose,
-        setShowCompose: handleSetShowCompose,
-        openComposeModal,
-        isLoading,
-        setIsLoading,
-        selectedEmail,
-        setSelectedEmail,
-        error,
-        setError,
-        totalEmails,
-        currentPage,
-        totalPages,
-        itemsPerPage,
-        setItemsPerPage,
-        changePage,
-        searchQuery,
-        searchEmails,
-        fetchEmailById,
-        refreshEmails,
-        updateEmail,
-        removeEmail,
-        addEmail,
-        moveEmail,
-        currentFolder,
-        setCurrentFolder,
-        hasNewEmails,
-        newEmailsCount,
-        syncingEmails,
-        checkForNewEmails
-      }}
-    >
+    <EmailContext.Provider value={contextValue}>
       {children}
     </EmailContext.Provider>
   );
 };
+
+// Hook for using the email context
+export const useEmailContext = () => useContext(EmailContext);

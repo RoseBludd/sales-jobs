@@ -248,7 +248,7 @@ export function useEmailCache({
       return;
     }
     
-    addEmailToCache(email, folder);
+    addEmailToCache(email);
     
     // Update local state if the email belongs to the current folder
     if (email.folder === folder) {
@@ -263,7 +263,7 @@ export function useEmailCache({
       return;
     }
     
-    moveEmailInCache(emailId, folder, toFolder);
+    moveEmailInCache(emailId, toFolder);
     
     // Update local state
     setAllEmails(prevEmails => prevEmails.filter(e => String(e.id) !== emailId));

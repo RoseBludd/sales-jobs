@@ -1,24 +1,92 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Email Dashboard Application
+
+A modern, responsive email dashboard built with Next.js, focusing on clean UI/UX and smooth transitions.
+
+## Features
+
+- **Clean, Modern Interface**: Aesthetically pleasing design with responsive layouts
+- **Dark/Light Theme Support**: Seamless theme switching with system preference detection
+- **Smooth Animations**: Fluid transitions and loading states
+- **Responsive Design**: Mobile-first approach with optimized layouts for all screen sizes
+- **Toast Notifications**: Elegant feedback system for user actions
+- **Skeleton Loading**: Improves perceived performance during data fetching
+
+## Tech Stack
+
+- **Next.js**: React framework with server components and routing
+- **Tailwind CSS**: Utility-first CSS framework for styling
+- **React-Hot-Toast**: Lightweight toast notification library
+- **Lucide Icons**: Beautiful, consistent icon set
+
+## Project Structure
+
+```
+src/
+├── app/
+│   ├── dashboard/
+│   │   ├── email/
+│   │   │   ├── components/
+│   │   │   │   ├── EmailPage.tsx       # Main email page component
+│   │   │   │   ├── EmailSkeleton.tsx   # Loading skeletons
+│   │   │   │   ├── FeatureNotification.tsx # Notifications for WIP features
+│   │   │   │   └── ...
+│   │   │   ├── context/
+│   │   │   │   └── EmailProvider.tsx   # Context for email state management
+│   │   │   ├── utils/
+│   │   │   │   └── animations.ts       # Animation configurations
+│   │   │   └── page.tsx                # Entry point for email route
+│   │   └── ...
+│   ├── layout.tsx                      # Root layout with theme support
+│   └── ...
+└── components/
+    ├── Sidebar.tsx                     # App sidebar with navigation
+    └── ...
+```
+
+## UI Design Principles
+
+1. **Consistency**: Unified design language across all components
+2. **Feedback**: Clear visual feedback for all user interactions
+3. **Performance**: Optimized loading states and transitions
+4. **Accessibility**: Support for keyboard navigation and screen readers
+5. **Theming**: Seamless dark/light mode transitions
+
+## Animation Strategy
+
+Animations are designed to be subtle and purposeful, enhancing the user experience without being distracting. Key animation principles:
+
+- **Loading States**: Skeleton loaders match the shape of the content they replace
+- **Transitions**: Smooth page and component transitions
+- **Feedback**: Subtle animations for user actions
+- **Performance**: CSS transitions and transforms for optimal performance
 
 ## Getting Started
 
-First, run the development server:
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Run the development server:
+   ```bash
+   npm run dev
+   ```
+4. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Environment Configuration
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The application supports multiple environments:
+- Development: Optimized for local development
+- Testing: For automated tests
+- Production: Optimized for performance and security
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Best Practices
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Clean Code**: Modular, reusable components
+- **Performance**: Optimized loading and rendering
+- **Responsive Design**: Mobile-first approach
+- **Accessibility**: ARIA attributes and keyboard navigation
+- **Error Handling**: Graceful error states and recovery
 
 ## AWS WorkMail Integration
 

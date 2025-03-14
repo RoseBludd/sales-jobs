@@ -55,33 +55,47 @@ const EmailListItem = ({
   useEffect(() => {
     const getEmailPreview = async () => {
       try {
-        // If the body looks like it contains HTML or styling
-        if (email.body.includes('<') || 
-            email.body.includes('{') || 
-            email.body.includes('[') || 
-            email.body.includes('style=')) {
-          
-          // Use the same parsing function as EmailContent component
-          const parsedHtml = await parseEmailBody(email.body);
-          const plainText = extractTextFromHtml(parsedHtml);
-          
-          if (plainText && plainText.trim() !== '') {
-            setPreviewText(plainText);
-            return;
+        // Default to empty string if body is null or undefined
+        if (!email.body) {
+          setPreviewText('No preview available');
+          return;
+        }
+        
+        // If the body looks like it contains HTML
+        if (email.body.includes('<') || email.body.includes('&nbsp;')) {
+          try {
+            // Create a DOMParser to properly parse HTML
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(email.body, 'text/html');
+            
+            // Get the text content from the parsed document
+            let plainText = doc.body.textContent || '';
+            
+            // Clean up the text and limit to a reasonable preview length
+            plainText = plainText
+              .replace(/\s+/g, ' ')
+              .trim()
+              .substring(0, 100);
+              
+            if (plainText) {
+              setPreviewText(plainText + (plainText.length >= 100 ? '...' : ''));
+              return;
+            }
+          } catch (parseError) {
+            console.error('Error parsing HTML:', parseError);
           }
         }
         
-        // Fallback to simple text extraction if parsing fails or returns empty
-        const simpleText = email.body
-          .replace(/<[^>]*>/g, '') // Remove HTML tags
-          .replace(/\{[^}]*\}/g, '') // Remove CSS
-          .replace(/\[[^\]]*\]/g, '') // Remove attributes in brackets
-          .replace(/&nbsp;/g, ' ') // Replace HTML entities
-          .replace(/\s+/g, ' ')
-          .trim();
-        
-        if (simpleText && simpleText.trim() !== '') {
-          setPreviewText(simpleText);
+        // Fallback: Simple text extraction
+        let simpleText = email.body
+          .replace(/<[^>]*>/g, ' ') // Replace HTML tags with spaces
+          .replace(/&[^;]+;/g, ' ') // Replace HTML entities with spaces
+          .replace(/\s+/g, ' ')     // Normalize whitespace
+          .trim()
+          .substring(0, 100);
+          
+        if (simpleText) {
+          setPreviewText(simpleText + (simpleText.length >= 100 ? '...' : ''));
         } else {
           // If we still don't have text, use the subject as fallback
           setPreviewText(email.subject || 'No preview available');
@@ -166,8 +180,7 @@ const EmailListItem = ({
               </span>
             )}
             <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-              {previewText.substring(0, 100)}
-              {previewText.length > 100 ? '...' : ''}
+              {previewText}
             </p>
           </div>
         </div>
