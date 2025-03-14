@@ -12,11 +12,11 @@ const EmailSidebarContent = () => {
   const pathname = usePathname();
   
   // Get current folder from pathname
-  const currentFolder = pathname.split('/').pop() as FolderType || 'inbox';
+  const currentFolder = pathname ? pathname.split('/').pop() as FolderType || 'inbox' : 'inbox';
   
   // Use the shared context for shared state
   const {
-    emails,
+    allEmails,
     isLoading,
     setShowCompose,
     openComposeModal
@@ -24,11 +24,11 @@ const EmailSidebarContent = () => {
   
   // Count unread emails for each folder
   const unreadCounts = {
-    inbox: emails.filter(e => e.folder === 'inbox' && !e.isRead).length,
+    inbox: allEmails ? allEmails.filter(e => e.folder === 'inbox' && !e.isRead).length : 0,
     sent: 0,
-    draft: emails.filter(e => e.folder === 'draft').length,
+    draft: allEmails ? allEmails.filter(e => e.folder === 'draft').length : 0,
     trash: 0,
-    spam: emails.filter(e => e.folder === 'spam' && !e.isRead).length
+    spam: allEmails ? allEmails.filter(e => e.folder === 'spam' && !e.isRead).length : 0
   };
   
   const handleFolderSelect = (folder: FolderType) => {

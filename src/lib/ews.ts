@@ -25,9 +25,38 @@ import {
   ItemId,
   FolderId,
   ConflictResolutionMode,
-  CalendarView
+  CalendarView,
+  PagedView,
+  ItemSchema
 } from 'ews-javascript-api';
 import { getServerSession } from 'next-auth';
+
+// Define AWS WorkMail folder types
+export enum WorkMailFolderName {
+  Inbox = "INBOX",
+  DeletedItems = "DELETED_ITEMS",
+  SentItems = "SENT_ITEMS",
+  Drafts = "DRAFTS",
+  JunkEmail = "JUNK_EMAIL"
+}
+
+// Map AWS WorkMail folder names to Exchange WellKnownFolderName
+export const mapWorkMailToExchangeFolder = (workMailFolder: WorkMailFolderName): WellKnownFolderName => {
+  switch (workMailFolder) {
+    case WorkMailFolderName.Inbox:
+      return WellKnownFolderName.Inbox;
+    case WorkMailFolderName.DeletedItems:
+      return WellKnownFolderName.DeletedItems;
+    case WorkMailFolderName.SentItems:
+      return WellKnownFolderName.SentItems;
+    case WorkMailFolderName.Drafts:
+      return WellKnownFolderName.Drafts;
+    case WorkMailFolderName.JunkEmail:
+      return WellKnownFolderName.JunkEmail;
+    default:
+      return WellKnownFolderName.Inbox; // Default to Inbox
+  }
+};
 
 // Error class for EWS-related errors
 export class EWSError extends Error {
@@ -99,113 +128,57 @@ const createFolderIdFromString = (id: string): FolderId => {
   return folderId;
 };
 
-// Email operations
-export const getEmails = async (
-  folderName: WellKnownFolderName = WellKnownFolderName.Inbox,
+// Get emails from a folder with pagination
+export async function getEmails(
+  folderName: WorkMailFolderName = WorkMailFolderName.Inbox,
   pageSize: number = 50,
-  offset: number = 0
-): Promise<any[]> => {
+  offset: number = 0,
+  lastSyncTime?: Date | null
+): Promise<any[]> {
   try {
+    // Initialize the Exchange service
     const service = await initEWSService();
-    
-    // Use a more detailed property set to ensure we get all available properties
+
+    // Set up the view to retrieve emails
     const view = new ItemView(pageSize, offset);
     view.PropertySet = new PropertySet(BasePropertySet.FirstClassProperties);
     
-    // First, get the list of email IDs from the folder
-    const results = await service.FindItems(folderName, view);
+    // Convert WorkMail folder name to Exchange folder name
+    const exchangeFolderName = mapWorkMailToExchangeFolder(folderName);
     
-    // For each email, use GetItem to get more detailed information
-    const emails = await Promise.all(
-      results.Items.map(async (email) => {
-        try {
-          // Get sender information
-          let fromAddress = '';
-          let fromName = '';
-          
-          if (email instanceof EmailMessage) {
-            // Try to get From property directly first
-            if (email.From) {
-              fromAddress = email.From.Address || '';
-              fromName = email.From.Name || '';
-            } else if (email.Sender) {
-              // Try using Sender as fallback
-              fromAddress = email.Sender.Address || '';
-              fromName = email.Sender.Name || '';
-            }
-            
-            // If still no sender info, try to get more detailed item
-            if (!fromAddress && !fromName) {
-              try {
-                // Use GetItem operation to get more detailed information
-                const itemId = email.Id;
-                const propertySet = new PropertySet(BasePropertySet.FirstClassProperties);
-                
-                // Get the detailed item
-                const detailedItem = await EmailMessage.Bind(service, itemId, propertySet);
-                
-                // Try to extract sender information from the detailed item
-                if (detailedItem.From) {
-                  fromAddress = detailedItem.From.Address || '';
-                  fromName = detailedItem.From.Name || '';
-                } else if (detailedItem.Sender) {
-                  fromAddress = detailedItem.Sender.Address || '';
-                  fromName = detailedItem.Sender.Name || '';
-                }
-              } catch (bindError) {
-                console.error('Error getting detailed item:', bindError);
-              }
-            }
-            
-            // If still no sender info, use placeholder
-            if (!fromAddress && !fromName) {
-              // Try to extract from subject if possible
-              const subject = email.Subject || '';
-              if (subject.toLowerCase().includes('from:')) {
-                const match = subject.match(/from:\s*([^\s]+)/i);
-                if (match && match[1]) {
-                  fromAddress = match[1];
-                  fromName = match[1].split('@')[0] || 'Unknown Sender';
-                }
-              } else {
-                // Use default placeholder
-                fromAddress = 'no-sender@weroofamerica.com';
-                fromName = 'AWS WorkMail';
-              }
-            }
-          }
-          
-          return {
-            id: email.Id.UniqueId,
-            subject: email.Subject,
-            from: fromAddress,
-            fromName: fromName,
-            receivedDate: email.DateTimeReceived ? email.DateTimeReceived.ToISOString() : undefined,
-            hasAttachments: email.HasAttachments,
-            isRead: email instanceof EmailMessage ? email.IsRead : undefined
-          };
-        } catch (emailError) {
-          console.error('Error processing email:', emailError);
-          // Return basic info if there's an error
-          return {
-            id: email.Id.UniqueId,
-            subject: email.Subject || 'No Subject',
-            from: 'error@weroofamerica.com',
-            fromName: 'Error Processing Sender',
-            receivedDate: email.DateTimeReceived ? email.DateTimeReceived.ToISOString() : undefined,
-            hasAttachments: false,
-            isRead: false
-          };
-        }
-      })
-    );
+    // For incremental sync, we'll use a different approach
+    // Instead of using a filter which is causing issues, we'll retrieve all emails
+    // and filter them on the client side if lastSyncTime is provided
+    const results = await service.FindItems(exchangeFolderName, view);
+    
+    // Process and filter the emails
+    const emails = results.Items.map((email: any) => ({
+      id: email.Id.UniqueId,
+      subject: email.Subject || '(No Subject)',
+      from: email.From?.Address || '',
+      fromName: email.From?.Name || '',
+      receivedDate: email.DateTimeReceived ? email.DateTimeReceived.ToISOString() : null,
+      hasAttachments: email.HasAttachments || false,
+      isRead: email.IsRead || false
+    }));
+    
+    // If lastSyncTime is provided, filter out older emails
+    if (lastSyncTime) {
+      const syncTimestamp = lastSyncTime.getTime();
+      return emails.filter(email => {
+        // Only keep emails that are newer than the last sync time
+        if (!email.receivedDate) return true; // Keep emails with no date
+        const emailTimestamp = new Date(email.receivedDate).getTime();
+        return emailTimestamp > syncTimestamp;
+      });
+    }
     
     return emails;
   } catch (error) {
-    logEWSError(error as Error);
-    throw new EWSError('Failed to fetch emails', error);
+    console.error('Error fetching emails:', error);
+    return [];
   }
-};
+}
 
 export const getEmailById = async (emailId: string): Promise<any> => {
   try {
@@ -480,16 +453,18 @@ export const sendEmail = async (
   }
 };
 
-export const moveEmail = async (emailId: string, destinationFolderId: string): Promise<boolean> => {
+export const moveEmail = async (emailId: string, destinationFolderName: WorkMailFolderName): Promise<boolean> => {
   try {
     const service = await initEWSService();
     
-    // Convert string IDs to ItemId and FolderId
+    // Convert string ID to ItemId
     const itemId = createItemIdFromString(emailId);
-    const folderId = createFolderIdFromString(destinationFolderId);
+    
+    // Get the exchange folder
+    const exchangeFolderName = mapWorkMailToExchangeFolder(destinationFolderName);
     
     const email = await EmailMessage.Bind(service, itemId);
-    await email.Move(folderId);
+    await email.Move(exchangeFolderName);
     
     return true;
   } catch (error) {
@@ -1010,20 +985,14 @@ export const manageEventAttendees = async (
 // Folder operations
 export const getFolders = async (): Promise<any[]> => {
   try {
-    const service = await initEWSService();
-    
-    const folderView = new FolderView(100);
-    folderView.PropertySet = new PropertySet(BasePropertySet.FirstClassProperties);
-    
-    const rootFolder = await Folder.Bind(service, WellKnownFolderName.MsgFolderRoot);
-    const results = await service.FindFolders(rootFolder.Id, folderView);
-    
-    return results.Folders.map(folder => ({
-      id: folder.Id.UniqueId,
-      displayName: folder.DisplayName,
-      totalCount: folder.TotalCount,
-      childFolderCount: folder.ChildFolderCount
-    }));
+    // Simply return the static list of WorkMail folders
+    return [
+      { id: WorkMailFolderName.Inbox, displayName: 'Inbox', totalCount: 0, childFolderCount: 0 },
+      { id: WorkMailFolderName.SentItems, displayName: 'Sent Items', totalCount: 0, childFolderCount: 0 },
+      { id: WorkMailFolderName.DeletedItems, displayName: 'Deleted Items', totalCount: 0, childFolderCount: 0 },
+      { id: WorkMailFolderName.Drafts, displayName: 'Drafts', totalCount: 0, childFolderCount: 0 },
+      { id: WorkMailFolderName.JunkEmail, displayName: 'Junk Email', totalCount: 0, childFolderCount: 0 }
+    ];
   } catch (error) {
     logEWSError(error as Error);
     throw new EWSError('Failed to fetch folders', error);

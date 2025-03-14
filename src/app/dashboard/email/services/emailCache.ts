@@ -6,14 +6,17 @@
 import { Email } from '../types';
 import { fetchEmails, fetchEmailById } from './emailService';
 
+// Cache constants
+const CACHE_PREFIX = 'emailCache_';
+const CACHE_DETAIL_PREFIX = 'emailDetailCache_';
+const CACHE_EXPIRATION = 5 * 60 * 1000; // 5 minutes
+
 // In-memory cache for emails
 interface EmailCache {
   [folder: string]: {
     emails: Email[];
     timestamp: number;
     total: number;
-    page: number;
-    pageSize: number;
   };
 }
 
@@ -24,9 +27,6 @@ interface EmailDetailCache {
     timestamp: number;
   };
 }
-
-// Cache expiration time (5 minutes)
-const CACHE_EXPIRATION = 5 * 60 * 1000;
 
 // Global cache objects
 let emailCache: EmailCache = {};
@@ -49,8 +49,8 @@ export function initializeCache(userEmail: string): void {
   
   // Try to load from localStorage
   try {
-    const storedEmailCache = localStorage.getItem(`emailCache_${userEmail}`);
-    const storedDetailCache = localStorage.getItem(`emailDetailCache_${userEmail}`);
+    const storedEmailCache = localStorage.getItem(`${CACHE_PREFIX}${userEmail}`);
+    const storedDetailCache = localStorage.getItem(`${CACHE_DETAIL_PREFIX}${userEmail}`);
     
     if (storedEmailCache) {
       emailCache = JSON.parse(storedEmailCache);
@@ -76,74 +76,89 @@ function saveCache(): void {
   if (!currentUser) return;
   
   try {
-    localStorage.setItem(`emailCache_${currentUser}`, JSON.stringify(emailCache));
-    localStorage.setItem(`emailDetailCache_${currentUser}`, JSON.stringify(emailDetailCache));
+    localStorage.setItem(`${CACHE_PREFIX}${currentUser}`, JSON.stringify(emailCache));
+    localStorage.setItem(`${CACHE_DETAIL_PREFIX}${currentUser}`, JSON.stringify(emailDetailCache));
   } catch (error) {
     console.error('Error saving cache to localStorage:', error);
   }
 }
 
 /**
- * Get emails from cache or fetch from API
+ * Get ALL emails from cache or fetch from API
+ * Client-side pagination is handled in the component
  */
 export async function getEmails(
   folder: 'inbox' | 'sent' | 'draft' | 'trash' | 'spam',
-  page: number = 1,
-  pageSize: number = 50,
   forceRefresh: boolean = false,
-  searchQuery?: string,
   sync: boolean = false
 ): Promise<{
   emails: Email[];
   total: number;
-  page: number;
-  pageSize: number;
   fromCache: boolean;
 }> {
   if (!currentUser) {
     throw new Error('Cache not initialized. Call initializeCache first.');
   }
   
-  const cacheKey = searchQuery ? `${folder}-search-${searchQuery}` : folder;
   const now = Date.now();
+  let fromCache = false;
   
-  // Check if we have a valid cache entry
-  if (
-    !forceRefresh &&
-    !sync &&
-    emailCache[cacheKey] &&
-    now - emailCache[cacheKey].timestamp < CACHE_EXPIRATION &&
-    emailCache[cacheKey].page === page &&
-    emailCache[cacheKey].pageSize === pageSize
-  ) {
+  // Check if we have a valid cache for this folder
+  const folderCache = emailCache[folder];
+  const cacheValid = folderCache && 
+                    (now - folderCache.timestamp < CACHE_EXPIRATION) &&
+                    !forceRefresh;
+  
+  if (cacheValid) {
+    console.log(`Using cached emails for folder: ${folder}`);
     return {
-      emails: emailCache[cacheKey].emails,
-      total: emailCache[cacheKey].total,
-      page: emailCache[cacheKey].page,
-      pageSize: emailCache[cacheKey].pageSize,
+      emails: folderCache.emails,
+      total: folderCache.total,
       fromCache: true
     };
   }
   
-  // Fetch emails from API
-  const result = await fetchEmails(folder, page, pageSize, searchQuery, sync);
-  
-  // Update cache
-  emailCache[cacheKey] = {
-    emails: result.emails,
-    timestamp: now,
-    total: result.total,
-    page: result.page,
-    pageSize: result.pageSize
-  };
-  
-  // Save to localStorage
-  saveCache();
-  
-  return {
-    ...result,
-    fromCache: false
-  };
+  try {
+    console.log(`Fetching ALL emails for folder: ${folder}`);
+    // Fetch all emails from the API - no pagination parameters
+    const result = await fetchEmails(folder, 1, 1000, undefined, sync);
+    
+    // Update cache
+    emailCache[folder] = {
+      emails: result.emails,
+      timestamp: now,
+      total: result.total
+    };
+    
+    // Save to localStorage
+    saveCache();
+    
+    return {
+      emails: result.emails,
+      total: result.total,
+      fromCache: false
+    };
+  } catch (error) {
+    console.error(`Error fetching emails for folder ${folder}:`, error);
+    
+    // Add more detailed logging
+    if (error instanceof Error) {
+      console.error(`Error details: ${error.message}`);
+      console.error(`Error stack: ${error.stack}`);
+    }
+    
+    // If we have a cache (even if expired), use it as fallback
+    if (folderCache) {
+      console.log(`Using expired cache as fallback for folder: ${folder}`);
+      return {
+        emails: folderCache.emails,
+        total: folderCache.total,
+        fromCache: true
+      };
+    }
+    
+    throw error;
+  }
 }
 
 /**
@@ -160,38 +175,42 @@ export async function checkForNewEmails(
   }
   
   // Fetch just the first page with a small page size to check for new emails
-  const result = await fetchEmails(folder, 1, 10, undefined);
+  try {
+    const result = await fetchEmails(folder, 1, 10, undefined);
   
-  // If we don't have a cache for this folder yet, just update it
-  if (!emailCache[folder]) {
-    emailCache[folder] = {
-      emails: result.emails,
-      timestamp: Date.now(),
-      total: result.total,
-      page: 1,
-      pageSize: 10
-    };
-    saveCache();
-    return { hasNewEmails: true, newCount: result.total };
+    // If we don't have a cache for this folder yet, just update it
+    if (!emailCache[folder]) {
+      emailCache[folder] = {
+        emails: result.emails,
+        timestamp: Date.now(),
+        total: result.total
+      };
+      saveCache();
+      return { hasNewEmails: true, newCount: result.total };
+    }
+  
+    // Check if there are new emails by comparing IDs
+    const cachedIds = new Set(emailCache[folder].emails.map(email => email.id));
+    const newEmails = result.emails.filter(email => !cachedIds.has(email.id));
+  
+    if (newEmails.length > 0) {
+      // Add new emails to the beginning of the cache
+      emailCache[folder].emails = [...newEmails, ...emailCache[folder].emails];
+      emailCache[folder].timestamp = Date.now();
+      emailCache[folder].total = emailCache[folder].total + newEmails.length;
+      
+      // Save to localStorage
+      saveCache();
+      
+      return { hasNewEmails: true, newCount: newEmails.length };
+    }
+  
+    return { hasNewEmails: false, newCount: 0 };
+  } catch (error) {
+    console.error(`Error checking for new emails in folder ${folder}:`, error);
+    // Return no new emails since we couldn't check
+    return { hasNewEmails: false, newCount: 0 };
   }
-  
-  // Check if there are new emails by comparing IDs
-  const cachedIds = new Set(emailCache[folder].emails.map(email => email.id));
-  const newEmails = result.emails.filter(email => !cachedIds.has(email.id));
-  
-  if (newEmails.length > 0) {
-    // Add new emails to the beginning of the cache
-    emailCache[folder].emails = [...newEmails, ...emailCache[folder].emails];
-    emailCache[folder].timestamp = Date.now();
-    emailCache[folder].total = emailCache[folder].total + newEmails.length;
-    
-    // Save to localStorage
-    saveCache();
-    
-    return { hasNewEmails: true, newCount: newEmails.length };
-  }
-  
-  return { hasNewEmails: false, newCount: 0 };
 }
 
 /**
@@ -335,8 +354,8 @@ export function clearCache(): void {
   });
   
   // Clear localStorage
-  localStorage.removeItem(`emailCache_${currentUser}`);
-  localStorage.removeItem(`emailDetailCache_${currentUser}`);
+  localStorage.removeItem(`${CACHE_PREFIX}${currentUser}`);
+  localStorage.removeItem(`${CACHE_DETAIL_PREFIX}${currentUser}`);
 }
 
 /**

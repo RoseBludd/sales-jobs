@@ -5,11 +5,11 @@ import { Send, Paperclip, X } from 'lucide-react';
 
 interface ComposeEmailProps {
   onClose: () => void;
-  onSend: (to: string, subject: string, body: string) => Promise<boolean>;
+  onSubmit: (data: { to: string; subject: string; body: string }) => Promise<void>;
   isSubmitting?: boolean;
 }
 
-const ComposeEmail = ({ onClose, onSend, isSubmitting = false }: ComposeEmailProps) => {
+const ComposeEmail = ({ onClose, onSubmit, isSubmitting = false }: ComposeEmailProps) => {
   const [to, setTo] = useState('');
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
@@ -63,14 +63,10 @@ const ComposeEmail = ({ onClose, onSend, isSubmitting = false }: ComposeEmailPro
     try {
       setSending(true);
       console.log('Sending email to:', to);
-      const success = await onSend(to, subject, body);
+      await onSubmit({ to, subject, body });
       
-      if (success) {
-        console.log('Email sent successfully');
-        onClose();
-      } else {
-        setError('Failed to send email. Please try again.');
-      }
+      console.log('Email sent successfully');
+      onClose();
     } catch (err) {
       setError('An error occurred while sending the email');
       console.error(err);

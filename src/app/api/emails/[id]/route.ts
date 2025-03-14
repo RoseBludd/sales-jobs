@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { getEmailById, deleteEmail } from '@/lib/ews';
+import { getEmailById, deleteEmail, WorkMailFolderName } from '@/lib/ews';
 import { getCachedEmail, cacheEmail, invalidateCache } from '@/lib/cache';
 import { emailIdSchema, deleteEmailSchema } from '@/lib/validation';
+import * as emailDbService from '@/lib/email-db-service';
 
 // GET /api/emails/[id] - Get email details
 export async function GET(
@@ -16,10 +17,6 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get query parameters
-    const searchParams = request.nextUrl.searchParams;
-    const sync = searchParams.get('sync') === 'true';
-
     // Validate email ID
     const parsed = emailIdSchema.safeParse({ id: params.id });
     if (!parsed.success) {
@@ -30,40 +27,50 @@ export async function GET(
     const { id } = parsed.data;
     console.log('Fetching email with ID:', id);
 
-    // Try to get email from cache first if not syncing
-    if (!sync) {
-      const cachedEmail = await getCachedEmail(id);
-      if (cachedEmail) {
-        console.log('Returning cached email for ID:', id);
-        return NextResponse.json({
-          email: cachedEmail,
-          fromCache: true,
-          lastSynced: Date.now(),
-        });
+    // Get the user ID from the session
+    const userId = await emailDbService.getCurrentUserId();
+
+    // Try to get email from database
+    try {
+      const email = await emailDbService.getEmailByIdFromDb(id, userId);
+      
+      if (!email) {
+        console.error('Email not found for ID:', id);
+        return NextResponse.json({ error: 'Email not found' }, { status: 404 });
       }
+      
+      // Mark email as read if it's not already
+      if (!email.isRead) {
+        await emailDbService.markEmailAsRead(id, userId);
+        email.isRead = true;
+      }
+      
+      return NextResponse.json({ email, fromDb: true });
+    } catch (dbError) {
+      console.error('Error fetching email from database:', dbError);
+      
+      // If not in database, try fetching from EWS directly as fallback
+      console.log('Attempting to fetch from EWS as fallback for ID:', id);
+      const ewsEmail = await getEmailById(id);
+      
+      if (!ewsEmail) {
+        return NextResponse.json({ error: 'Email not found' }, { status: 404 });
+      }
+      
+      // Add to database for future queries
+      try {
+        const folderId = await emailDbService.getFolderByWorkMailName(
+          WorkMailFolderName.Inbox, 
+          userId
+        );
+        await emailDbService.saveEmail(ewsEmail, userId, folderId);
+      } catch (saveError) {
+        console.error('Error saving email to database:', saveError);
+        // Continue even if saving fails
+      }
+      
+      return NextResponse.json({ email: ewsEmail, fromDb: false });
     }
-
-    // If not in cache or syncing, fetch from EWS
-    console.log('Fetching email from EWS for ID:', id);
-    const email = await getEmailById(id);
-    
-    if (!email) {
-      console.error('Email not found for ID:', id);
-      return NextResponse.json({ error: 'Email not found' }, { status: 404 });
-    }
-    
-    // Log the email body for debugging
-    console.log('Email body length:', email.body ? email.body.length : 0);
-    console.log('Email body preview:', email.body ? email.body.substring(0, 100) + '...' : 'No body');
-    
-    // Cache the result
-    await cacheEmail(id, email);
-
-    return NextResponse.json({
-      email,
-      fromCache: false,
-      lastSynced: Date.now(),
-    });
   } catch (error) {
     console.error('Error fetching email details:', error);
     return NextResponse.json({ 

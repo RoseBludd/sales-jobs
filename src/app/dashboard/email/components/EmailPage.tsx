@@ -34,9 +34,11 @@ export default function EmailPage({ folder }: EmailPageProps) {
   
   // Use the shared context
   const { 
-    emails,
+    paginatedEmails,
+    allEmails,
     showCompose, 
     setShowCompose, 
+    isLoading,
     setIsLoading,
     selectedEmail,
     setSelectedEmail,
@@ -44,16 +46,18 @@ export default function EmailPage({ folder }: EmailPageProps) {
     setError,
     totalEmails,
     currentPage,
-    setCurrentPage,
+    totalPages,
+    itemsPerPage,
+    setItemsPerPage,
+    changePage,
     searchQuery,
-    setSearchQuery,
+    searchEmails,
     refreshEmails,
     fetchEmailById,
     updateEmail,
     removeEmail,
     addEmail,
     moveEmail,
-    searchEmails,
     setCurrentFolder,
     hasNewEmails,
     newEmailsCount,
@@ -62,11 +66,9 @@ export default function EmailPage({ folder }: EmailPageProps) {
   } = useEmailContext();
   
   const [loading, setLoading] = useState(true);
-  const [totalPages, setTotalPages] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const initialLoad = useRef(true);
   const [isMobileView, setIsMobileView] = useState(false);
-  const [perPage] = useState(10); // Number of emails per page
   const [localShowCompose, setLocalShowCompose] = useState(false); // Local state for compose modal
   const [showNewEmailsNotification, setShowNewEmailsNotification] = useState(false);
 
@@ -103,396 +105,320 @@ export default function EmailPage({ folder }: EmailPageProps) {
       
       return () => clearTimeout(timer);
     }
-  }, [hasNewEmails, newEmailsCount]);
+  }, [hasNewEmails]);
 
-  // Memoized fetchEmails function to prevent unnecessary re-renders
-  const fetchEmails = useCallback(async (page: number = 1, forceRefresh: boolean = false) => {
-    if (page < 1) return;
-    
-    try {
-      setLoading(true);
-      setIsLoading(true);
-      
-      // Set the current page in the context
-      setCurrentPage(page);
-      
-      // The actual email fetching is now handled by the context
-      await refreshEmails(forceRefresh);
-      
-      // Calculate total pages based on total emails and per page
-      setTotalPages(Math.ceil(totalEmails / perPage));
-      
-      // Hide new emails notification after refresh
-      setShowNewEmailsNotification(false);
-      
-    } catch (err) {
-      console.error('Error fetching emails:', err);
-    } finally {
-      setLoading(false);
-      setIsLoading(false);
-      initialLoad.current = false;
-    }
-  }, [refreshEmails, setCurrentPage, setIsLoading, totalEmails, perPage]);
-
-  // Fetch emails when component mounts
+  // Update loading state based on context
   useEffect(() => {
-    if (initialLoad.current) {
-      initialLoad.current = false;
-      fetchEmails(1, true);
-    }
-  }, [fetchEmails]);
-
-  // Handle page change
-  const handlePageChange = (newPage: number) => {
-    if (newPage < 1 || newPage > totalPages || newPage === currentPage) return;
+    setLoading(isLoading);
     
-    fetchEmails(newPage);
-  };
+    // Mark initial load as complete once loading is done
+    if (!isLoading && initialLoad.current) {
+      initialLoad.current = false;
+    }
+  }, [isLoading]);
+
+  // Handle search debounce
+  const handleSearch = useCallback((query: string) => {
+    searchEmails(query);
+  }, [searchEmails]);
 
   // Handle email selection
-  const handleEmailSelect = async (email: Email) => {
+  const handleSelectEmail = useCallback(async (emailId: string, isRead: boolean) => {
     try {
-      setLoading(true);
+      setIsLoading(true);
       
-      // If the email is already selected, deselect it
-      if (selectedEmail && selectedEmail.id === email.id) {
-        setSelectedEmail(null);
-        return;
-      }
-      
-      console.log(`Selecting email with ID: ${email.id}`);
-      
-      // Get the full email details
-      try {
-        const fullEmail = await fetchEmailById(String(email.id));
-        
-        console.log('Fetched full email details:', {
-          id: fullEmail.id,
-          subject: fullEmail.subject,
-          bodyLength: fullEmail.body ? fullEmail.body.length : 0,
-          bodyPreview: fullEmail.body ? fullEmail.body.substring(0, 50) + '...' : 'No body'
-        });
-        
-        // Mark as read if not already
-        if (!fullEmail.isRead) {
-          const updatedEmail = { ...fullEmail, isRead: true };
-          updateEmail(updatedEmail);
+      // If the email isn't already marked as read, mark it as read
+      if (!isRead) {
+        const email = await fetchEmailById(emailId);
+        if (!email.isRead) {
+          updateEmail({ ...email, isRead: true });
         }
-        
-        // Set as selected email
-        setSelectedEmail(fullEmail);
-      } catch (fetchError) {
-        console.error('Error fetching email details:', fetchError);
-        setError(fetchError instanceof Error ? fetchError.message : 'Failed to fetch email details');
-        
-        // Still select the email with limited details
-        setSelectedEmail({
-          ...email,
-          body: 'Error loading email content. Please try again.'
-        });
       }
-    } catch (err) {
-      console.error('Error selecting email:', err);
-      setError(err instanceof Error ? err.message : 'Failed to select email');
+      
+      setSelectedEmail(emailId);
+    } catch (error) {
+      console.error('Error selecting email:', error);
+      setError('Failed to load email details');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  };
-
-  // Handle manual sync
-  const handleSync = async () => {
-    try {
-      await checkForNewEmails();
-    } catch (err) {
-      console.error('Error syncing emails:', err);
-    }
-  };
+  }, [fetchEmailById, setError, setIsLoading, setSelectedEmail, updateEmail]);
 
   // Handle email deletion
-  const handleDeleteEmail = async (email: Email) => {
-    try {
-      setIsSubmitting(true);
-      
-      // If this is already in the trash, permanently delete it
-      if (folder === 'trash') {
-        // Call the API to permanently delete the email
-        const response = await fetch(`/api/emails/${email.id}?hardDelete=true`, {
-          method: 'DELETE',
-        });
-        
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to delete email');
-        }
-        
-        // Remove from context
-        removeEmail(String(email.id));
-        
-        // If this was the selected email, deselect it
-        if (selectedEmail && selectedEmail.id === email.id) {
-          setSelectedEmail(null);
-        }
-      } else {
-        // Move to trash
-        await moveEmail(String(email.id), 'trash');
-        
-        // If this was the selected email, deselect it
-        if (selectedEmail && selectedEmail.id === email.id) {
-          setSelectedEmail(null);
-        }
-      }
-    } catch (err) {
-      console.error('Error deleting email:', err);
-      setError(err instanceof Error ? err.message : 'Failed to delete email');
-    } finally {
-      setIsSubmitting(false);
+  const handleDeleteEmail = useCallback((emailId: string) => {
+    // If the deleted email is currently selected, clear selection
+    if (selectedEmail === emailId) {
+      setSelectedEmail(null);
     }
-  };
-
-  // Handle moving email to a different folder
-  const handleMoveEmail = async (email: Email, toFolder: 'inbox' | 'sent' | 'draft' | 'trash' | 'spam') => {
-    try {
-      setIsSubmitting(true);
-      
-      // Move the email using the context
-      await moveEmail(String(email.id), toFolder);
-      
-      // If this was the selected email, deselect it
-      if (selectedEmail && selectedEmail.id === email.id) {
-        setSelectedEmail(null);
-      }
-    } catch (err) {
-      console.error('Error moving email:', err);
-      setError(err instanceof Error ? err.message : 'Failed to move email');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Handle sending a new email
-  const handleSendEmail = async (to: string, subject: string, body: string): Promise<boolean> => {
-    try {
-      setIsSubmitting(true);
-      
-      // Call the API to send the email
-      const response = await fetch('/api/emails', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          to: to.split(/[,;]/).map(email => email.trim()).filter(Boolean),
-          subject,
-          body
-        }),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to send email');
-      }
-      
-      const result = await response.json();
-      
-      if (result.success) {
-        // Create a new email object for the sent email
-        const sentEmail: Email = {
-          id: result.emailId || Math.random(),
-          folder: 'sent',
-          from: 'me@example.com', // This will be replaced by the actual sender
-          fromName: 'Me',
-          to,
-          subject,
-          body,
-          date: new Date().toISOString(),
-          isRead: true,
-          isStarred: false
-        };
-        
-        // Add to context
-        addEmail(sentEmail);
-        
-        // Close compose modal
-        setShowCompose(false);
-        
-        return true;
-      } else {
-        throw new Error(result.message || 'Failed to send email');
-      }
-    } catch (err) {
-      console.error('Error sending email:', err);
-      setError(err instanceof Error ? err.message : 'Failed to send email');
-      return false;
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Handle search
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
     
-    if (query.trim()) {
-      searchEmails(query);
-    } else {
-      // If search query is empty, refresh emails
-      fetchEmails(1, true);
+    // Move to trash instead of permanent delete
+    moveEmail(emailId, 'trash');
+  }, [moveEmail, selectedEmail, setSelectedEmail]);
+
+  // Handle pagination
+  const handlePageChange = useCallback((page: number) => {
+    changePage(page);
+    // If an email is selected, clear selection when changing pages
+    if (selectedEmail) {
+      setSelectedEmail(null);
     }
-  };
+  }, [changePage, selectedEmail, setSelectedEmail]);
 
-  // Handle retry
-  const handleRetry = () => {
-    fetchEmails(currentPage, true);
-  };
+  // Handle refresh button click
+  const handleRefresh = useCallback(() => {
+    // Clear selected email
+    setSelectedEmail(null);
+    
+    // Refresh emails
+    refreshEmails(true);
+  }, [refreshEmails, setSelectedEmail]);
 
-  // Handle compose click
-  const handleComposeClick = () => {
-    setShowCompose(true);
-  };
+  // Handle changing items per page
+  const handleItemsPerPageChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newSize = parseInt(e.target.value, 10);
+    setItemsPerPage(newSize);
+  }, [setItemsPerPage]);
 
-  // Render pagination
-  const renderPagination = () => {
+  // Handle email compose submission
+  const handleComposeSubmit = useCallback(async (emailData: any) => {
+    setIsSubmitting(true);
+    
+    try {
+      // TODO: Add your email sending logic here
+      const newEmail = {
+        id: Date.now(), // Temporary ID
+        folder: 'sent',
+        from: 'me@example.com', // Replace with user email
+        fromName: 'Me',
+        to: emailData.to,
+        subject: emailData.subject,
+        body: emailData.body,
+        date: new Date().toISOString(),
+        isRead: true,
+        isStarred: false,
+        attachments: []
+      };
+      
+      // Add to sent folder
+      addEmail({ ...newEmail } as Email);
+      
+      // Close compose modal
+      setShowCompose(false);
+      setLocalShowCompose(false);
+      
+      // Show success toast
+      // toast.success('Email sent successfully');
+    } catch (error) {
+      console.error('Error sending email:', error);
+      setError('Failed to send email');
+      
+      // Show error toast
+      // toast.error('Failed to send email');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [addEmail, setError, setShowCompose]);
+
+  // Render loading state
+  if (loading && initialLoad.current) {
     return (
-      <div className="flex items-center justify-between mt-4">
-        <button
-          onClick={() => handlePageChange(currentPage - 1)}
-          disabled={currentPage <= 1}
-          className={`px-3 py-1 rounded ${
-            currentPage <= 1
-              ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-              : 'bg-blue-500 text-white hover:bg-blue-600'
-          }`}
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </button>
-        
-        <span className="text-sm">
-          Page {currentPage} of {totalPages}
-        </span>
-        
-        <button
-          onClick={() => handlePageChange(currentPage + 1)}
-          disabled={currentPage >= totalPages}
-          className={`px-3 py-1 rounded ${
-            currentPage >= totalPages
-              ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-              : 'bg-blue-500 text-white hover:bg-blue-600'
-          }`}
-        >
-          <ChevronRight className="h-4 w-4" />
-        </button>
+      <div className="h-full flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading emails...</p>
+        </div>
       </div>
     );
-  };
+  }
 
-  // Render the email list
+  // Render the main component
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b">
-        <h1 className="text-xl font-semibold capitalize">
-          {folder === 'inbox' ? (
-            <div className="flex items-center">
-              <Inbox className="h-5 w-5 mr-2" />
-              Inbox
-            </div>
-          ) : (
-            folder
-          )}
-        </h1>
+    <div className="h-full flex flex-col">
+      {/* Email header with search and controls */}
+      <div className="border-b border-gray-200 dark:border-gray-800 p-4">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+          <h1 className="text-xl font-semibold capitalize">
+            {folder}
+          </h1>
+          
+          <div className="flex-1 max-w-md">
+            <SearchBar 
+              value={searchQuery} 
+              onChange={handleSearch} 
+              placeholder="Search emails..." 
+            />
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <SyncButton 
+              onClick={handleRefresh} 
+              isSyncing={syncingEmails}
+            />
+            
+            <button
+              onClick={() => {
+                setShowCompose(true);
+                setLocalShowCompose(true);
+              }}
+              className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg transition-all duration-200"
+            >
+              Compose
+            </button>
+          </div>
+        </div>
         
-        <div className="flex items-center space-x-2">
-          {/* Sync button */}
-          <SyncButton onSync={handleSync} isSyncing={syncingEmails} />
+        {/* Pagination and filters */}
+        <div className="flex flex-col sm:flex-row items-center justify-between mt-4 gap-4">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center">
+              <label htmlFor="itemsPerPage" className="mr-2 text-sm text-gray-600 dark:text-gray-400">
+                Show:
+              </label>
+              <select
+                id="itemsPerPage"
+                value={itemsPerPage}
+                onChange={handleItemsPerPageChange}
+                className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md px-2 py-1 text-sm"
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
+            
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              {totalEmails > 0
+                ? `Showing ${Math.min((currentPage - 1) * itemsPerPage + 1, totalEmails)}-${Math.min(
+                    currentPage * itemsPerPage,
+                    totalEmails
+                  )} of ${totalEmails}`
+                : 'No emails found'}
+            </div>
+          </div>
           
-          {/* Search bar */}
-          <SearchBar onSearch={handleSearch} />
-          
-          {/* Compose button */}
-          <button
-            onClick={handleComposeClick}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
-          >
-            Compose
-          </button>
+          {totalPages > 1 && (
+            <div className="flex items-center">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className={`p-1 rounded ${
+                  currentPage === 1 ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                }`}
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              
+              <span className="mx-2 text-sm">
+                Page {currentPage} of {totalPages}
+              </span>
+              
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className={`p-1 rounded ${
+                  currentPage === totalPages ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                }`}
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
       
       {/* New emails notification */}
-      <NewEmailsNotification 
-        count={newEmailsCount}
-        onRefresh={() => fetchEmails(1, true)}
-        visible={showNewEmailsNotification}
-      />
-      
-      {/* Error message */}
-      {error && (
-        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 flex items-center justify-between">
-          <div className="flex items-center">
-            <AlertCircle className="h-5 w-5 mr-2" />
-            <span>{error}</span>
-          </div>
-          <button
-            onClick={handleRetry}
-            className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-sm"
-          >
-            Retry
-          </button>
-        </div>
+      {showNewEmailsNotification && (
+        <NewEmailsNotification 
+          count={newEmailsCount} 
+          onDismiss={() => setShowNewEmailsNotification(false)}
+          onView={() => {
+            handlePageChange(1);
+            refreshEmails();
+            setShowNewEmailsNotification(false);
+          }}
+        />
       )}
       
-      {/* Loading indicator */}
-      {loading && (
-        <div className="flex items-center justify-center p-4">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-        </div>
-      )}
-      
-      {/* Email content */}
-      <div className="flex flex-1 overflow-hidden">
+      {/* Email content area */}
+      <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
         {/* Email list */}
-        <div className={`${selectedEmail && !isMobileView ? 'w-1/3' : 'w-full'} overflow-y-auto border-r`}>
-          {emails.length === 0 && !loading ? (
-            <div className="flex flex-col items-center justify-center h-64">
-              <p className="text-gray-500">No emails found</p>
-            </div>
-          ) : (
-            <div>
-              {emails.map((email) => (
-                <EmailListItem
-                  key={email.id}
-                  email={email}
-                  isSelected={selectedEmail?.id === email.id}
-                  onSelect={() => handleEmailSelect(email)}
-                  onDelete={() => handleDeleteEmail(email)}
-                  onMove={(toFolder) => handleMoveEmail(email, toFolder)}
-                />
-              ))}
+        <div className={`border-r border-gray-200 dark:border-gray-800 overflow-y-auto ${
+          selectedEmail && isMobileView ? 'hidden' : selectedEmail ? 'md:w-1/3 w-full' : 'w-full'
+        }`}>
+          {error && (
+            <div className="bg-red-50 dark:bg-red-900/10 text-red-800 dark:text-red-200 p-4 flex items-center">
+              <AlertCircle className="h-5 w-5 mr-2" />
+              {error}
             </div>
           )}
           
-          {/* Pagination */}
-          {emails.length > 0 && renderPagination()}
+          {paginatedEmails.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-64 text-gray-500 dark:text-gray-400">
+              {folder === 'inbox' && <Inbox className="h-16 w-16 mb-4 opacity-20" />}
+              {folder === 'sent' && <Send className="h-16 w-16 mb-4 opacity-20" />}
+              {folder === 'trash' && <Trash className="h-16 w-16 mb-4 opacity-20" />}
+              {folder === 'spam' && <AlertCircle className="h-16 w-16 mb-4 opacity-20" />}
+              {searchQuery ? (
+                <>
+                  <p>No emails match your search</p>
+                  <button 
+                    onClick={() => searchEmails('')}
+                    className="mt-2 text-blue-500 hover:text-blue-700 text-sm"
+                  >
+                    Clear search
+                  </button>
+                </>
+              ) : (
+                <p>No emails in this folder</p>
+              )}
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100 dark:divide-gray-800">
+              {paginatedEmails.map((email) => (
+                <EmailListItem
+                  key={email.id}
+                  email={email}
+                  isSelected={selectedEmail === String(email.id)}
+                  onSelect={() => handleSelectEmail(String(email.id), email.isRead)}
+                  onDelete={() => handleDeleteEmail(String(email.id))}
+                  onStarToggle={(starred) => {
+                    updateEmail({ ...email, isStarred: starred });
+                  }}
+                />
+              ))}
+              
+              {syncingEmails && (
+                <div className="p-4 text-center text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center">
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Syncing emails...
+                </div>
+              )}
+            </div>
+          )}
         </div>
         
-        {/* Email detail */}
+        {/* Email detail view */}
         {selectedEmail && (
-          <div className={`${isMobileView ? 'w-full absolute inset-0 bg-white z-10' : 'w-2/3'} overflow-y-auto`}>
+          <div className={`flex-1 overflow-y-auto ${isMobileView ? 'w-full' : 'md:flex-1'}`}>
             <EmailDetail
-              email={selectedEmail}
-              onClose={() => setSelectedEmail(null)}
-              onDelete={() => selectedEmail && handleDeleteEmail(selectedEmail)}
-              onMove={(toFolder) => selectedEmail && handleMoveEmail(selectedEmail, toFolder)}
+              emailId={selectedEmail}
+              onBack={() => setSelectedEmail(null)}
+              onDelete={() => handleDeleteEmail(selectedEmail)}
+              isMobileView={isMobileView}
             />
           </div>
         )}
       </div>
       
-      {/* Compose modal */}
-      {showCompose && (
+      {/* Compose email modal */}
+      {(showCompose || localShowCompose) && (
         <ComposeEmail
-          onClose={() => setShowCompose(false)}
-          onSend={handleSendEmail}
+          onClose={() => {
+            setShowCompose(false);
+            setLocalShowCompose(false);
+          }}
+          onSubmit={handleComposeSubmit}
           isSubmitting={isSubmitting}
         />
       )}

@@ -102,7 +102,7 @@ export async function fetchEmails(
 
     const apiFolder = folderMap[folder.toLowerCase()] || 'inbox';
     
-    // Build the API URL
+    // Build the API URL - don't explicitly convert to strings
     let url = `/api/emails?folder=${apiFolder}&page=${page}&pageSize=${pageSize}`;
     if (sync) {
       url += '&sync=true';
@@ -129,8 +129,13 @@ export async function fetchEmails(
       : await fetch(url);
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to fetch emails');
+      const errorData = await response.json().catch(() => ({ error: 'No error details provided' }));
+      console.error('API error response:', {
+        status: response.status,
+        statusText: response.statusText,
+        data: errorData
+      });
+      throw new Error(errorData.error || `Failed to fetch emails (${response.status}: ${response.statusText})`);
     }
 
     const data = await response.json();

@@ -4,14 +4,14 @@ import React from 'react';
 import { RefreshCw } from 'lucide-react';
 
 interface SyncButtonProps {
-  onSync: () => void;
+  onClick: () => void;
   isSyncing: boolean;
 }
 
-const SyncButton: React.FC<SyncButtonProps> = ({ onSync, isSyncing }) => {
+const SyncButton: React.FC<SyncButtonProps> = ({ onClick, isSyncing }) => {
   return (
     <button
-      onClick={onSync}
+      onClick={onClick}
       disabled={isSyncing}
       className={`p-2 rounded-full ${
         isSyncing

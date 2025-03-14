@@ -6,28 +6,31 @@ import { useEmailCache } from '../services/useEmailCache';
 
 // Create the email context
 export const EmailContext = createContext<{
-  emails: Email[];
+  allEmails: Email[];
+  paginatedEmails: Email[];
   showCompose: boolean;
   setShowCompose: (show: boolean) => void;
   openComposeModal: () => void;
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
-  selectedEmail: Email | null;
-  setSelectedEmail: (email: Email | null) => void;
+  selectedEmail: string | null;
+  setSelectedEmail: (emailId: string | null) => void;
   error: string | null;
   setError: (error: string | null) => void;
   totalEmails: number;
   currentPage: number;
-  setCurrentPage: (page: number) => void;
+  totalPages: number;
+  itemsPerPage: number;
+  setItemsPerPage: (size: number) => void;
+  changePage: (page: number) => void;
   searchQuery: string;
-  setSearchQuery: (query: string) => void;
+  searchEmails: (query: string) => void;
   fetchEmailById: (id: string, sync?: boolean) => Promise<Email>;
   refreshEmails: (forceRefresh?: boolean) => Promise<void>;
   updateEmail: (email: Email) => void;
   removeEmail: (emailId: string) => void;
   addEmail: (email: Email) => void;
   moveEmail: (emailId: string, toFolder: 'inbox' | 'sent' | 'draft' | 'trash' | 'spam') => void;
-  searchEmails: (query: string) => Promise<void>;
   currentFolder: 'inbox' | 'sent' | 'draft' | 'trash' | 'spam';
   setCurrentFolder: (folder: 'inbox' | 'sent' | 'draft' | 'trash' | 'spam') => void;
   hasNewEmails: boolean;
@@ -35,7 +38,8 @@ export const EmailContext = createContext<{
   syncingEmails: boolean;
   checkForNewEmails: () => Promise<void>;
 }>({
-  emails: [],
+  allEmails: [],
+  paginatedEmails: [],
   showCompose: false,
   setShowCompose: () => {},
   openComposeModal: () => {},
@@ -47,16 +51,18 @@ export const EmailContext = createContext<{
   setError: () => {},
   totalEmails: 0,
   currentPage: 1,
-  setCurrentPage: () => {},
+  totalPages: 1,
+  itemsPerPage: 10,
+  setItemsPerPage: () => {},
+  changePage: () => {},
   searchQuery: '',
-  setSearchQuery: () => {},
+  searchEmails: () => {},
   fetchEmailById: async () => ({ id: 0, folder: 'inbox', from: '', fromName: '', to: '', subject: '', body: '', date: '', isRead: false, isStarred: false }),
   refreshEmails: async () => {},
   updateEmail: () => {},
   removeEmail: () => {},
   addEmail: () => {},
   moveEmail: () => {},
-  searchEmails: async () => {},
   currentFolder: 'inbox',
   setCurrentFolder: () => {},
   hasNewEmails: false,
@@ -74,31 +80,35 @@ interface EmailProviderProps {
 
 export const EmailProvider = ({ children }: EmailProviderProps) => {
   const [showCompose, setShowCompose] = useState(false);
-  const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedEmail, setSelectedEmail] = useState<string | null>(null);
   const [currentFolder, setCurrentFolder] = useState<'inbox' | 'sent' | 'draft' | 'trash' | 'spam'>('inbox');
   
-  // Use the email cache hook
+  // Use the email cache hook with updated signature
   const {
-    emails,
+    allEmails,
+    paginatedEmails,
     loading: isLoading,
     error,
     totalEmails,
+    currentPage,
+    totalPages,
+    itemsPerPage,
+    searchQuery,
     refreshEmails,
     getEmail: fetchEmailById,
     updateEmail,
     removeEmail,
     addEmail,
     moveEmail,
+    clearAllCache,
     searchEmails,
+    changePage,
+    setItemsPerPage,
     hasNewEmails,
     newEmailsCount,
     syncingEmails
   } = useEmailCache({
     folder: currentFolder,
-    page: currentPage,
-    pageSize: 50,
     initialLoad: true,
     syncInterval: 60000 // Check for new emails every minute
   });
@@ -135,30 +145,23 @@ export const EmailProvider = ({ children }: EmailProviderProps) => {
     }
   }, [refreshEmails]);
 
-  // Effect to refresh emails when folder or page changes
+  // Effect to refresh emails when folder changes
   useEffect(() => {
-    // Only refresh when folder or page changes, not on every render
-    if (initialLoad.current) {
-      initialLoad.current = false;
-      refreshEmails(false).catch(err => {
-        console.error('Error refreshing emails:', err);
-      });
-    }
-  }, [currentFolder, currentPage, refreshEmails]);
-
-  // Add a separate effect to handle folder changes
-  useEffect(() => {
-    // Reset initialLoad when folder changes
-    initialLoad.current = true;
-  }, [currentFolder]);
-
-  // Add a ref to track initial load
-  const initialLoad = useRef(true);
+    // Only refresh when folder changes
+    console.log(`Folder changed to: ${currentFolder}, refreshing emails`);
+    refreshEmails(true).catch(err => {
+      console.error('Error refreshing emails after folder change:', err);
+    });
+    
+    // Reset selected email when changing folders
+    setSelectedEmail(null);
+  }, [currentFolder, refreshEmails]);
 
   return (
     <EmailContext.Provider
       value={{
-        emails,
+        allEmails,
+        paginatedEmails,
         showCompose,
         setShowCompose: handleSetShowCompose,
         openComposeModal,
@@ -170,16 +173,18 @@ export const EmailProvider = ({ children }: EmailProviderProps) => {
         setError,
         totalEmails,
         currentPage,
-        setCurrentPage,
+        totalPages,
+        itemsPerPage,
+        setItemsPerPage,
+        changePage,
         searchQuery,
-        setSearchQuery,
+        searchEmails,
         fetchEmailById,
         refreshEmails,
         updateEmail,
         removeEmail,
         addEmail,
         moveEmail,
-        searchEmails,
         currentFolder,
         setCurrentFolder,
         hasNewEmails,

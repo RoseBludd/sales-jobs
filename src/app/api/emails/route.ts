@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { WellKnownFolderName } from 'ews-javascript-api';
-import { getEmails, sendEmail } from '@/lib/ews';
+import { sendEmail } from '@/lib/ews';
 import { emailListQuerySchema, sendEmailSchema } from '@/lib/validation';
-import { getCachedEmails, cacheEmails, isEmailCacheFresh } from '@/lib/cache';
+import * as emailDbService from '@/lib/email-db-service';
+import { WorkMailFolderName } from '@/lib/ews';
 
 // GET /api/emails - List emails
 export async function GET(request: NextRequest) {
@@ -30,61 +30,74 @@ export async function GET(request: NextRequest) {
     const { folder, pageSize, page, sync } = parsed.data;
     const offset = (page - 1) * pageSize;
 
-    // Map folder name to EWS WellKnownFolderName
-    let folderName: WellKnownFolderName;
-    switch (folder?.toLowerCase() || 'inbox') {
-      case 'inbox':
-        folderName = WellKnownFolderName.Inbox;
-        break;
-      case 'sent':
-        folderName = WellKnownFolderName.SentItems;
-        break;
-      case 'drafts':
-        folderName = WellKnownFolderName.Drafts;
-        break;
-      case 'deleted':
-        folderName = WellKnownFolderName.DeletedItems;
-        break;
-      case 'junk':
-        folderName = WellKnownFolderName.JunkEmail;
-        break;
-      default:
-        folderName = WellKnownFolderName.Inbox;
+    // Map folder name to WorkMailFolderName using a more flexible approach
+    let workMailFolder: WorkMailFolderName;
+    const folderUpper = (folder || 'inbox').toUpperCase();
+    
+    // Direct mapping for standard folder names
+    if (folderUpper === 'INBOX') {
+      workMailFolder = WorkMailFolderName.Inbox;
+    } else if (folderUpper === 'SENT_ITEMS' || folderUpper === 'SENT') {
+      workMailFolder = WorkMailFolderName.SentItems;
+    } else if (folderUpper === 'DRAFTS') {
+      workMailFolder = WorkMailFolderName.Drafts;
+    } else if (folderUpper === 'DELETED_ITEMS' || folderUpper === 'DELETED') {
+      workMailFolder = WorkMailFolderName.DeletedItems;
+    } else if (folderUpper === 'JUNK_EMAIL' || folderUpper === 'JUNK') {
+      workMailFolder = WorkMailFolderName.JunkEmail;
+    } else {
+      // Default to inbox for unknown folder names
+      workMailFolder = WorkMailFolderName.Inbox;
     }
+    
+    console.log(`Mapped folder name "${folder}" to WorkMailFolderName: ${workMailFolder}`);
 
     // Get the user ID from the session
-    const userId = session.user.email;
+    const userId = await emailDbService.getCurrentUserId();
     
-    // If sync is true, check if we need to refresh the cache
-    const shouldUseCache = !sync && await isEmailCacheFresh(userId, folder || 'inbox', 60);
-    
-    // Try to get emails from cache first if not syncing
-    if (shouldUseCache) {
-      const cachedEmails = await getCachedEmails(userId, folder || 'inbox');
-      
-      if (cachedEmails) {
-        // Apply pagination to cached results
-        const paginatedEmails = cachedEmails.slice(offset, offset + pageSize);
-        return NextResponse.json({
-          emails: paginatedEmails,
-          total: cachedEmails.length,
-          page,
-          pageSize,
-          fromCache: true,
-          lastSynced: Date.now(),
-        });
+    // If sync is true, fetch emails from EWS and store in database
+    if (sync) {
+      try {
+        console.log(`Syncing emails from folder: ${workMailFolder}`);
+        // Check if we should run in background
+        const background = searchParams.get('background') === 'true';
+        
+        if (background) {
+          // Start background sync and return immediately
+          setTimeout(async () => {
+            try {
+              await emailDbService.syncEmailsFromEws(workMailFolder, pageSize * 2, 0);
+              console.log(`Background sync completed for ${workMailFolder}`);
+            } catch (syncError) {
+              console.error('Error in background sync:', syncError);
+            }
+          }, 100);
+        } else {
+          // Sync in foreground
+          await emailDbService.syncEmailsFromEws(workMailFolder, pageSize * 2, 0);
+        }
+      } catch (syncError) {
+        console.error('Error syncing emails:', syncError);
+        // Continue even if sync fails, we'll return whatever is in the database
       }
     }
 
-    // If not in cache or syncing, fetch from EWS
-    const emails = await getEmails(folderName, pageSize, offset);
+    // Get total email count
+    const totalCount = await emailDbService.getEmailCountFromDb(userId, workMailFolder);
     
-    // Cache the results
-    await cacheEmails(userId, folder || 'inbox', emails);
+    // Get emails from database
+    const emails = await emailDbService.getEmailsFromDb(
+      userId,
+      workMailFolder,
+      pageSize,
+      offset
+    );
 
+    console.log(`Retrieved ${emails.length} emails from database for folder ${workMailFolder}`);
+    
     return NextResponse.json({
       emails,
-      total: emails.length,
+      total: totalCount,
       page,
       pageSize,
       fromCache: false,
