@@ -22,4 +22,6 @@ export interface TempJob {
   projectNotes?: string;
   businessName?: string;
   companyName?: string;
+  isSubmitted?: boolean;
+  updatedAt?: Date;
 } 

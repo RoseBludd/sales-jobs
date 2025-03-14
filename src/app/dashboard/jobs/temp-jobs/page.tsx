@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, UploadCloud, Loader2 } from 'lucide-react';
+import { ArrowLeft, UploadCloud, Loader2, Check } from 'lucide-react';
 import { TempJob } from './types';
 import { TempJobForm } from './components/TempJobForm';
 import { TempJobList } from './components/TempJobList';
@@ -14,6 +14,7 @@ export default function TempJobsPage() {
   const [tempJobs, setTempJobs] = useState<TempJob[]>([]);
   const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [newJob, setNewJob] = useState<Omit<TempJob, 'id' | 'createdAt'>>({
     name: '',
@@ -36,33 +37,43 @@ export default function TempJobsPage() {
     splitPercentage: 0,
     projectNotes: '',
     businessName: '',
-    companyName: ''
+    companyName: '',
+    isSubmitted: false
   });
   const [editingJob, setEditingJob] = useState<TempJob | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [showSubmitted, setShowSubmitted] = useState(true);
 
-  // Load temp jobs from localStorage on component mount
+  // Load temp jobs from API on component mount
   useEffect(() => {
-    const savedJobs = localStorage.getItem('tempJobs');
-    if (savedJobs) {
+    const fetchTempJobs = async () => {
+      setIsLoading(true);
       try {
-        const parsedJobs = JSON.parse(savedJobs);
-        // Convert string dates back to Date objects
-        const jobsWithDates = parsedJobs.map((job: any) => ({
+        const response = await fetch('/api/temp-jobs');
+        
+        if (!response.ok) {
+          throw new Error(`Error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        // Convert ISO date strings to Date objects
+        const jobsWithDates = data.map((job: any) => ({
           ...job,
           createdAt: new Date(job.createdAt),
+          updatedAt: job.updatedAt ? new Date(job.updatedAt) : undefined
         }));
+        
         setTempJobs(jobsWithDates);
       } catch (error) {
-        console.error('Failed to parse saved jobs:', error);
+        console.error('Failed to fetch temp jobs:', error);
+        toast.error('Failed to load temporary jobs');
+      } finally {
+        setIsLoading(false);
       }
-    }
-  }, []);
+    };
 
-  // Save temp jobs to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem('tempJobs', JSON.stringify(tempJobs));
-  }, [tempJobs]);
+    fetchTempJobs();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -104,7 +115,7 @@ export default function TempJobsPage() {
     }
   };
 
-  const handleSaveNewJob = () => {
+  const handleSaveNewJob = async () => {
     if (!newJob.name.trim()) {
       toast.error('Job Name is required');
       return;
@@ -125,40 +136,61 @@ export default function TempJobsPage() {
       return;
     }
 
-    const jobToAdd: TempJob = {
-      id: crypto.randomUUID(),
-      ...newJob,
-      createdAt: new Date(),
-    };
+    try {
+      const response = await fetch('/api/temp-jobs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newJob),
+      });
 
-    setTempJobs([jobToAdd, ...tempJobs]);
-    toast.success('Job saved successfully!');
-    setNewJob({
-      name: '',
-      customerId: '',
-      salesRepId: '',
-      mainRepEmail: '',
-      isNewCustomer: false,
-      customerFullName: '',
-      customerFirstName: '',
-      customerLastName: '',
-      customerPhone: '',
-      customerEmail: '',
-      customerAddress: '',
-      referredBy: '',
-      customerNotes: '',
-      isCustomerAddressMatchingJob: false,
-      projectAddress: '',
-      roofType: '',
-      isSplitJob: false,
-      splitPercentage: 0,
-      projectNotes: '',
-      businessName: '',
-      companyName: ''
-    });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Error: ${response.status}`);
+      }
+
+      const savedJob = await response.json();
+      
+      // Convert ISO date strings to Date objects
+      savedJob.createdAt = new Date(savedJob.createdAt);
+      if (savedJob.updatedAt) {
+        savedJob.updatedAt = new Date(savedJob.updatedAt);
+      }
+      
+      setTempJobs([savedJob, ...tempJobs]);
+      toast.success('Job saved successfully!');
+      setNewJob({
+        name: '',
+        customerId: '',
+        salesRepId: '',
+        mainRepEmail: '',
+        isNewCustomer: false,
+        customerFullName: '',
+        customerFirstName: '',
+        customerLastName: '',
+        customerPhone: '',
+        customerEmail: '',
+        customerAddress: '',
+        referredBy: '',
+        customerNotes: '',
+        isCustomerAddressMatchingJob: false,
+        projectAddress: '',
+        roofType: '',
+        isSplitJob: false,
+        splitPercentage: 0,
+        projectNotes: '',
+        businessName: '',
+        companyName: '',
+        isSubmitted: false
+      });
+    } catch (error) {
+      console.error('Error saving job:', error);
+      toast.error('Failed to save job');
+    }
   };
 
-  const handleUpdateJob = () => {
+  const handleUpdateJob = async () => {
     if (!editingJob) return;
     
     if (!editingJob.name.trim()) {
@@ -181,19 +213,59 @@ export default function TempJobsPage() {
       return;
     }
 
-    setTempJobs(tempJobs.map(job => job.id === editingJob.id ? editingJob : job));
-    toast.success('Job updated successfully!');
-    setEditingJob(null);
+    try {
+      const response = await fetch(`/api/temp-jobs/${editingJob.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editingJob),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Error: ${response.status}`);
+      }
+
+      const updatedJob = await response.json();
+      
+      // Convert ISO date strings to Date objects
+      updatedJob.createdAt = new Date(updatedJob.createdAt);
+      if (updatedJob.updatedAt) {
+        updatedJob.updatedAt = new Date(updatedJob.updatedAt);
+      }
+      
+      setTempJobs(tempJobs.map(job => job.id === updatedJob.id ? updatedJob : job));
+      toast.success('Job updated successfully!');
+      setEditingJob(null);
+    } catch (error) {
+      console.error('Error updating job:', error);
+      toast.error('Failed to update job');
+    }
   };
 
-  const handleDeleteJob = (id: string) => {
+  const handleDeleteJob = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this temporary job?')) {
-      setTempJobs(tempJobs.filter(job => job.id !== id));
-      setSelectedJobs(selectedJobs.filter(jobId => jobId !== id));
-      if (editingJob?.id === id) {
-        setEditingJob(null);
+      try {
+        const response = await fetch(`/api/temp-jobs/${id}`, {
+          method: 'DELETE',
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || `Error: ${response.status}`);
+        }
+
+        setTempJobs(tempJobs.filter(job => job.id !== id));
+        setSelectedJobs(selectedJobs.filter(jobId => jobId !== id));
+        if (editingJob?.id === id) {
+          setEditingJob(null);
+        }
+        toast.success('Job deleted successfully');
+      } catch (error) {
+        console.error('Error deleting job:', error);
+        toast.error('Failed to delete job');
       }
-      toast.success('Job deleted successfully');
     }
   };
 
@@ -222,25 +294,54 @@ export default function TempJobsPage() {
     setIsSubmitting(true);
     
     try {
-      const jobsToSubmit = tempJobs.filter(job => selectedJobs.includes(job.id));
-      
-      const response = await fetch('https://hook.us1.make.com/ccjun1bj3a6i7h8zybz7sbiic5if0vkc', {
+      const response = await fetch('/api/temp-jobs/submit', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(jobsToSubmit),
+        body: JSON.stringify({ 
+          jobIds: selectedJobs 
+        }),
       });
 
       if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Error: ${response.status}`);
       }
 
       toast.success('Jobs submitted successfully!');
       
+      // If keeping jobs, update them as submitted in the local state
+      setTempJobs(prevJobs => 
+        prevJobs.map(job => 
+          selectedJobs.includes(job.id) 
+            ? { ...job, isSubmitted: true } 
+            : job
+        )
+      );
+      
       // Optionally remove submitted jobs from temp jobs
-      if (window.confirm('Would you like to remove the submitted jobs from your temporary jobs list?')) {
-        setTempJobs(tempJobs.filter(job => !selectedJobs.includes(job.id)));
+      if (window.confirm('Would you like to remove the submitted jobs from your list?')) {
+        // Delete jobs from database
+        const deleteResponse = await fetch('/api/temp-jobs/submit', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            jobIds: selectedJobs,
+            shouldDelete: true
+          }),
+        });
+
+        if (deleteResponse.ok) {
+          // Update local state
+          setTempJobs(tempJobs.filter(job => !selectedJobs.includes(job.id)));
+          setSelectedJobs([]);
+          toast.success('Submitted jobs removed from list');
+        }
+      } else {
+        // Clear selection
         setSelectedJobs([]);
       }
     } catch (error) {
@@ -261,13 +362,15 @@ export default function TempJobsPage() {
     });
   };
   
-  // Filter jobs based on search query
-  const filteredJobs = tempJobs.filter(job => 
-    job.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    job.customerFullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    job.customerEmail?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    job.customerPhone?.includes(searchQuery)
-  );
+  // Filter jobs based on search query and submission status
+  const filteredJobs = tempJobs
+    .filter(job => showSubmitted || !job.isSubmitted)
+    .filter(job => 
+      job.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      job.customerFullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      job.customerEmail?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      job.customerPhone?.includes(searchQuery)
+    );
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -340,6 +443,18 @@ export default function TempJobsPage() {
                   )}
                 </span>
               </div>
+
+              <div className="flex items-center">
+                <label className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+                  <input
+                    type="checkbox"
+                    checked={showSubmitted}
+                    onChange={(e) => setShowSubmitted(e.target.checked)}
+                    className="mr-2 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  Show Submitted Jobs
+                </label>
+              </div>
               
               <div className="flex">
                 <button
@@ -391,17 +506,24 @@ export default function TempJobsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Main content area - 2/3 width on large screens */}
             <div className="lg:col-span-2 space-y-6">
-              <TempJobList
-                jobs={filteredJobs}
-                selectedJobs={selectedJobs}
-                onToggleSelect={handleToggleSelect}
-                onSelectAll={handleSelectAll}
-                onEdit={setEditingJob}
-                onDelete={handleDeleteJob}
-                formatDate={formatDate}
-                viewMode={viewMode}
-                searchQuery={searchQuery}
-              />
+              {isLoading ? (
+                <div className="flex justify-center items-center h-64">
+                  <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                  <span className="ml-2 text-gray-600 dark:text-gray-300">Loading jobs...</span>
+                </div>
+              ) : (
+                <TempJobList
+                  jobs={filteredJobs}
+                  selectedJobs={selectedJobs}
+                  onToggleSelect={handleToggleSelect}
+                  onSelectAll={handleSelectAll}
+                  onEdit={setEditingJob}
+                  onDelete={handleDeleteJob}
+                  formatDate={formatDate}
+                  viewMode={viewMode}
+                  searchQuery={searchQuery}
+                />
+              )}
             </div>
             
             {/* Form area - 1/3 width on large screens */}

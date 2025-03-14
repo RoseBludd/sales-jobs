@@ -1,4 +1,4 @@
-import { Trash2, Edit, CheckSquare, Square, Search } from 'lucide-react';
+import { Trash2, Edit, CheckSquare, Square, Search, CheckCircle2 } from 'lucide-react';
 import { TempJob } from '../types';
 
 interface TempJobListProps {
@@ -88,6 +88,7 @@ export function TempJobList({
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Customer</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Contact</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Created</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
@@ -99,7 +100,8 @@ export function TempJobList({
                                 ${selectedJobs.includes(job.id) 
                                   ? 'bg-blue-50 dark:bg-blue-900/20' 
                                   : 'bg-white dark:bg-gray-800'}
-                                hover:bg-gray-100 dark:hover:bg-gray-700`}
+                                hover:bg-gray-100 dark:hover:bg-gray-700
+                                ${job.isSubmitted ? 'opacity-75' : ''}`}
                     onClick={() => onToggleSelect(job.id)}
                   >
                     <td className="px-3 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
@@ -121,6 +123,16 @@ export function TempJobList({
                       {job.customerEmail || job.customerPhone || '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">{formatDate(job.createdAt)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {job.isSubmitted ? (
+                        <span className="flex items-center text-green-600 dark:text-green-400">
+                          <CheckCircle2 className="h-4 w-4 mr-1" />
+                          Submitted
+                        </span>
+                      ) : (
+                        <span className="text-gray-700 dark:text-gray-300">Pending</span>
+                      )}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300" onClick={(e) => e.stopPropagation()}>
                       <div className="flex space-x-3">
                         <button
@@ -160,7 +172,8 @@ export function TempJobList({
                            ${selectedJobs.includes(job.id) 
                              ? 'bg-blue-50 dark:bg-blue-900/20' 
                              : 'bg-white dark:bg-gray-800'}
-                           hover:bg-gray-100 dark:hover:bg-gray-700 hover:shadow-md`}
+                           hover:bg-gray-100 dark:hover:bg-gray-700 hover:shadow-md
+                           ${job.isSubmitted ? 'opacity-75' : ''}`}
                 onClick={() => onToggleSelect(job.id)}
               >
                 <div className="absolute top-3 left-3" onClick={(e) => e.stopPropagation()}>
@@ -178,7 +191,15 @@ export function TempJobList({
                 </div>
                 
                 <div className="ml-8">
-                  <h3 className="font-medium text-gray-900 dark:text-white">{job.name}</h3>
+                  <div className="flex justify-between items-start">
+                    <h3 className="font-medium text-gray-900 dark:text-white">{job.name}</h3>
+                    {job.isSubmitted && (
+                      <span className="inline-flex items-center text-xs font-medium px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                        <CheckCircle2 className="h-3 w-3 mr-1" />
+                        Submitted
+                      </span>
+                    )}
+                  </div>
                   <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
                     {job.customerFullName}
                   </p>

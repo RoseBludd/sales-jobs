@@ -48,6 +48,39 @@ model monday_jobs_sync {
   @@index([user_id], map: "idx_monday_jobs_sync_user_id")
 }
 
+
+model temp_jobs {
+  id                               String   @id @db.VarChar(36)
+  name                             String   @db.VarChar(255)
+  created_at                       DateTime @default(now()) @db.Timestamp(6)
+  customer_id                      String?  @db.VarChar(36)
+  sales_rep_id                     String?  @db.VarChar(36)
+  main_rep_email                   String?  @db.VarChar(255)
+  is_new_customer                  Boolean? @default(false)
+  customer_full_name               String   @db.VarChar(255)
+  customer_first_name              String   @db.VarChar(255)
+  customer_last_name               String   @db.VarChar(255)
+  customer_phone                   String?  @db.VarChar(50)
+  customer_email                   String?  @db.VarChar(255)
+  customer_address                 String?
+  referred_by                      String?  @db.VarChar(255)
+  customer_notes                   String?
+  is_customer_address_matching_job Boolean? @default(false)
+  project_address                  String?
+  roof_type                        String?  @db.VarChar(100)
+  is_split_job                     Boolean? @default(false)
+  split_percentage                 Decimal? @default(0) @db.Decimal(5, 2)
+  project_notes                    String?
+  business_name                    String?  @db.VarChar(255)
+  company_name                     String?  @db.VarChar(255)
+  updated_at                       DateTime @default(now()) @db.Timestamp(6)
+
+  @@index([customer_email], map: "idx_temp_jobs_customer_email")
+  @@index([customer_full_name], map: "idx_temp_jobs_customer_full_name")
+  @@index([customer_phone], map: "idx_temp_jobs_customer_phone")
+  @@index([name], map: "idx_temp_jobs_name")
+}
+
 model AssessmentResult {
   id             String   @id
   email          String

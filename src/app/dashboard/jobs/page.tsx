@@ -11,6 +11,7 @@ import { toast } from 'react-hot-toast';
 import { Job, CachedData } from './types';
 import { CACHE_KEY_PREFIX, CACHE_DURATION, ITEMS_PER_PAGE, STATUS_CLASSIFICATIONS } from './constants';
 import { SearchBar, ClassificationFilter, Pagination, JobCard, ItemsPerPageSelector } from './components';
+import { clearAllJobCaches } from './utils';
 
 
 // Custom Hooks
@@ -385,6 +386,29 @@ const useJobsData = (userEmail: string | null | undefined, itemsPerPageParam: nu
     // which is calculated in the paginatedFilteredJobs useMemo
   }, [allJobs.length, itemsPerPageParam]);
 
+  // Add a clear cache function that will be returned from the hook
+  const clearJobsCache = useCallback(() => {
+    if (!userEmail) return;
+    
+    try {
+      // Using the imported utility function to clear all job caches
+      const clearedCount = clearAllJobCaches();
+      console.log(`🗑️ Cleared ${clearedCount} job cache entries`);
+      
+      // Reset state
+      setAllJobs([]);
+      setHasLoadedJobs(false);
+      
+      toast.success(`Cache cleared. Reloading jobs data...`);
+      
+      // Refetch jobs
+      fetchInitialJobs(true);
+    } catch (error) {
+      console.error('❌ Error clearing cache:', error);
+      toast.error('Failed to clear cache. Please try again.');
+    }
+  }, [userEmail, fetchInitialJobs]);
+
   return { 
     allJobs,
     isLoading, 
@@ -393,6 +417,7 @@ const useJobsData = (userEmail: string | null | undefined, itemsPerPageParam: nu
     currentPage,
     totalPages,
     changePage,
+    clearJobsCache,
   };
 };
 
@@ -418,6 +443,7 @@ export default function JobsPage() {
     currentPage,
     totalPages,
     changePage,
+    clearJobsCache,
   } = useJobsData(session?.user?.email, itemsPerPage);
 
   // Update loading state based on isLoading and isSyncing
@@ -672,6 +698,30 @@ export default function JobsPage() {
               )}
               {loadingState === 'syncing' ? 'Syncing...' : 'Refresh Jobs'}
             </button>
+            
+            {/* Clear Cache button with tooltip */}
+            <div className="relative group">
+              <button
+                onClick={clearJobsCache}
+                disabled={loadingState === 'syncing' || loadingState === 'loading'}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 
+                         text-sm font-medium rounded-lg text-gray-700 dark:text-gray-200 
+                         bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700
+                         shadow-sm transition-all duration-200 hover:shadow
+                         focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
+                         dark:focus:ring-offset-gray-900 dark:focus:ring-blue-400
+                         disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <svg className="mr-2 h-5 w-5 text-gray-400 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Clear Cache
+              </button>
+              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap shadow-lg z-10">
+                Use this if job data appears incorrect or out of date
+                <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-t-4 border-gray-800 border-l-4 border-l-transparent border-r-4 border-r-transparent"></div>
+              </div>
+            </div>
           </div>
           
           <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
