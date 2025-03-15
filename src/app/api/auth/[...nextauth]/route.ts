@@ -9,6 +9,29 @@ import { authOptions } from '@/lib/auth';
  * 
  * @see https://next-auth.js.org/configuration/options
  */
-const handler = NextAuth(authOptions);
 
+// Create the handler with proper error handling
+const createHandler = () => {
+  try {
+    return NextAuth(authOptions);
+  } catch (error) {
+    console.error('Error creating NextAuth handler:', error instanceof Error ? error.message : String(error));
+    
+    // Return a function that always returns an error response
+    return async () => {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Internal Server Error', 
+          message: 'Authentication service is currently unavailable' 
+        }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    };
+  }
+};
+
+// Create the handler
+const handler = createHandler();
+
+// Export the handler functions
 export { handler as GET, handler as POST };

@@ -60,6 +60,12 @@ const DashboardLayout = ({ children }: LayoutProps) => {
         return 'Dashboard';
       case pathname.includes('/dashboard/jobs'):
         return 'Jobs';
+      case pathname.includes('/dashboard/jobs/fillout'):
+        return 'New Job';
+      case pathname.includes('/dashboard/jobs/temp-jobs'):
+        return 'Targets';
+      case pathname.includes('/dashboard/jobs/notes'):
+        return 'Notes';
       case pathname.includes('/dashboard/email/inbox'):
         return 'Email';
       case pathname.includes('/dashboard/email/sent'):

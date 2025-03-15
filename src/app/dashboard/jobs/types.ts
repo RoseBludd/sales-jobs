@@ -1,8 +1,9 @@
 export interface Job {
   id: string;
   name: string;
-  email: string;
+  email?: string;
   details: Record<string, string>;
+  notes_count: number;
 }
 
 export interface CachedData {

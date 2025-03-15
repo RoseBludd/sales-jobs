@@ -29,7 +29,7 @@ export function TempJobList({
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
         <div className="p-4 sm:p-6">
           <h2 className="text-xl font-semibold mb-3 sm:mb-4 text-gray-800 dark:text-gray-100">
-            Potential Customers
+            Potential Leads
           </h2>
           
           <div className="text-center py-6 sm:py-8 text-gray-500 dark:text-gray-400">
@@ -40,7 +40,7 @@ export function TempJobList({
                   <p className="text-sm mt-2">Try a different search term or clear the search.</p>
                 </div>
               : <div>
-                  <p>No potential customers saved yet.</p>
+                  <p>No potential leads saved yet.</p>
                   <p className="text-sm mt-2">Create one using the form.</p>
                 </div>
             }
@@ -55,7 +55,7 @@ export function TempJobList({
       <div className="p-3 sm:p-6">
         <div className="flex justify-between items-center mb-3 sm:mb-4">
           <h2 className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-100">
-            Potential Customers ({jobs.length})
+            Potential Leads ({jobs.length})
           </h2>
           <div className="text-sm text-gray-500 dark:text-gray-400">
             {selectedJobs.length > 0 && 

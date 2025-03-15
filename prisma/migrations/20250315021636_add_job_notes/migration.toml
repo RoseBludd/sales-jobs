@@ -1,0 +1,4 @@
+# This is an empty migration.toml file
+# It's needed for Prisma to recognize this as a valid migration
+
+migration_name = "20250315021636_add_job_notes" 

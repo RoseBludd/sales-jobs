@@ -4,6 +4,9 @@ import * as ewsService from './ews';
 import { WorkMailFolderName } from './ews';
 import { prisma } from '@/lib/prisma';
 
+// Check if we're running on the server side
+const isServer = typeof window === 'undefined';
+
 // Type for email from EWS
 interface EwsEmail {
   id: string;
@@ -23,6 +26,12 @@ interface EwsEmail {
 
 // Get or create a user record
 export async function getOrCreateUser(email: string, displayName?: string): Promise<string> {
+  // Ensure we're on the server side
+  if (!isServer) {
+    console.error('Database operations can only be performed on the server side');
+    throw new Error('Database operations can only be performed on the server side');
+  }
+  
   try {
     // Check if user exists
     const user = await prisma.$queryRaw`

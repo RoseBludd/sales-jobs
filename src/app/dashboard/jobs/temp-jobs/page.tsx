@@ -475,7 +475,7 @@ export default function TempJobsPage() {
                 Back to Jobs
               </Link>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-                Potential Customers
+                Potential Leads
               </h1>
             </div>
             
@@ -487,7 +487,7 @@ export default function TempJobsPage() {
                         dark:focus:ring-offset-gray-900 transition-colors duration-200"
             >
               <Plus className="h-5 w-5 mr-2" />
-              Add Potential Customer
+              Add Potential Lead
             </button>
           </div>
 
@@ -583,7 +583,7 @@ export default function TempJobsPage() {
             {isLoading ? (
               <div className="flex justify-center items-center h-64 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
                 <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-                <span className="ml-2 text-gray-600 dark:text-gray-300">Loading potential customers...</span>
+                <span className="ml-2 text-gray-600 dark:text-gray-300">Loading potential leads...</span>
               </div>
             ) : (
               <>
@@ -614,7 +614,7 @@ export default function TempJobsPage() {
                           </div>
                           <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No potential customers yet</h3>
                           <p className="text-gray-500 dark:text-gray-400 mb-6">
-                            Get started by adding your first potential customer
+                            Get started by adding your first potential lead
                           </p>
                           <button
                             onClick={handleOpenAddForm}
@@ -624,7 +624,7 @@ export default function TempJobsPage() {
                                     transition-colors duration-200"
                           >
                             <Plus className="h-5 w-5 inline mr-1" />
-                            Add Potential Customer
+                            Add Potential Lead
                           </button>
                         </div>
                       )}

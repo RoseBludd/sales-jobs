@@ -1,27 +1,39 @@
 'use client';
 
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
 import toast from 'react-hot-toast';
 import Header from '@/components/Header';
 import { checkEmailExists } from '@/lib/monday';
 import { useSession } from 'next-auth/react';
 
-export default function LoginPage() {
+// Separate component that uses useSearchParams
+function LoginContent() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
 
   // Redirect if already logged in
   useEffect(() => {
+    if (status === 'loading') return;
+    
     if (session) {
-      router.push('/dashboard');
+      setIsRedirecting(true);
+      // Small delay to show the redirecting state
+      const timer = setTimeout(() => {
+        router.push(callbackUrl);
+      }, 500);
+      
+      return () => clearTimeout(timer);
     }
-  }, [session, router]);
+  }, [session, router, status, callbackUrl]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,21 +54,45 @@ export default function LoginPage() {
         email,
         password,
         redirect: false,
+        callbackUrl,
       });
       console.log('Sign in result:', result);
 
       if (result?.error) {
-        toast.error('Invalid credentials');
+        console.error('Authentication error:', result.error);
+        
+        // Show a more helpful error message
+        if (result.error.includes('Failed to verify credentials')) {
+          toast.error('Authentication service is temporarily unavailable. Please try again later.');
+        } else if (result.error.includes('database')) {
+          toast.error('Database connection issue. Please try again later.');
+        } else {
+          toast.error('Invalid credentials or server error. Please try again.');
+        }
       } else {
-        router.push('/dashboard');
+        setIsRedirecting(true);
+        router.push(callbackUrl);
       }
     } catch (error) {
       console.error('Login error:', error);
-      toast.error('An error occurred during login');
+      toast.error('An error occurred during login. Please try again later.');
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Show loading state while checking session or redirecting
+  if (status === 'loading' || isRedirecting) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center">
+        <Header />
+        <div className="flex flex-col items-center justify-center p-8">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
+          <p className="text-gray-600">{isRedirecting ? 'Redirecting to dashboard...' : 'Loading...'}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -135,5 +171,27 @@ export default function LoginPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+// Loading fallback for Suspense
+function LoginFallback() {
+  return (
+    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center">
+      <Header />
+      <div className="flex flex-col items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
+        <p className="text-gray-600">Loading...</p>
+      </div>
+    </div>
+  );
+}
+
+// Main component with Suspense boundary
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginFallback />}>
+      <LoginContent />
+    </Suspense>
   );
 }

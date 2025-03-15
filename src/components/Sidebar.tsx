@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Calendar, Mail, Settings, User, LogOut, Home, ChevronLeft, Briefcase, Sun, Moon } from 'lucide-react';
+import { Calendar, Mail, Settings, User, LogOut, Home, ChevronLeft, Briefcase, Sun, Moon, RefreshCw } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import toast from 'react-hot-toast';
 

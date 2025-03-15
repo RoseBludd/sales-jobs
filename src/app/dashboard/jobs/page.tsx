@@ -1,10 +1,9 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { RefreshCcw, Loader2 } from 'lucide-react';
-import { getUserJobs, getAllUserJobs } from '@/lib/monday';
 import { toast } from 'react-hot-toast';
 
 // Import types, constants, and components
@@ -22,6 +21,9 @@ const useJobsData = (userEmail: string | null | undefined, itemsPerPageParam: nu
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [hasLoadedJobs, setHasLoadedJobs] = useState(false);
+  const [lastSynced, setLastSynced] = useState<string | null>(null);
+  const [syncInProgress, setSyncInProgress] = useState(false);
+  const syncLockRef = useRef(false);
 
   // Get cache key for the current user
   const getCacheKey = useCallback((email: string | null | undefined) => {
@@ -71,6 +73,90 @@ const useJobsData = (userEmail: string | null | undefined, itemsPerPageParam: nu
     }));
   }, [userEmail, getCacheKey]);
 
+  // Function to fetch jobs from the database
+  const fetchJobsFromDatabase = useCallback(async () => {
+    if (!userEmail) return;
+    
+    try {
+      setIsLoading(true);
+      console.log('📊 Fetching jobs from database...');
+      
+      const response = await fetch(`/api/jobs/database?pageSize=1000`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch jobs from database');
+      }
+      
+      const data = await response.json();
+      
+      console.log(`📋 Fetched ${data.jobs.length} jobs from database`);
+      
+      setAllJobs(data.jobs);
+      setHasLoadedJobs(true);
+      setLastSynced(data.lastSynced);
+      
+      // Calculate total pages
+      const pages = Math.ceil(data.jobs.length / itemsPerPageParam);
+      setTotalPages(pages || 1);
+      
+      // Save to cache for faster loading next time
+      saveJobsToCache(data.jobs, data.hasMore ? String(data.page * data.pageSize) : null, data.hasMore);
+      
+    } catch (error) {
+      console.error('Error fetching jobs from database:', error);
+      toast.error('Failed to fetch jobs. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userEmail, itemsPerPageParam, saveJobsToCache]);
+
+  // Function to trigger a sync with Monday.com
+  const syncWithMonday = useCallback(async (forceFullSync: boolean = false) => {
+    if (!userEmail) return;
+    
+    try {
+      // We don't check syncLockRef here since it should be managed by the calling function
+      console.log(`🔄 Starting ${forceFullSync ? 'full' : 'incremental'} sync with Monday.com...`);
+      setSyncInProgress(true);
+      
+      const response = await fetch('/api/monday/sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: userEmail,
+          background: true,
+          forceFullSync,
+          chunkSize: forceFullSync ? 200 : 50, // Use smaller chunks for incremental sync
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to sync jobs');
+      }
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        toast.success(`${forceFullSync ? 'Full' : 'Incremental'} sync started in background`);
+        
+        // Wait a bit before fetching jobs to allow sync to make progress
+        setTimeout(() => {
+          fetchJobsFromDatabase();
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('Error syncing with Monday.com:', error);
+      toast.error('Failed to sync with Monday.com. Please try again.');
+      // Make sure to release the lock on error
+      syncLockRef.current = false;
+      setIsSyncing(false);
+      setSyncInProgress(false);
+    }
+  }, [userEmail, fetchJobsFromDatabase]);
+
   // Define syncLatestJobs first before it's used in fetchInitialJobs
   const syncLatestJobs = useCallback(async () => {
     if (isSyncing || !userEmail) {
@@ -78,219 +164,165 @@ const useJobsData = (userEmail: string | null | undefined, itemsPerPageParam: nu
       return;
     }
     
+    // Set syncing state but don't set the lock yet
+    setIsSyncing(true);
+    
     try {
-      console.log('🔄 Starting job sync process...');
-      setIsSyncing(true);
+      // First, check if we need to sync by fetching just the most recent job from Monday
+      console.log('🔍 Checking if sync is needed by comparing most recent job...');
       
-      // Use cached jobs override if provided, otherwise use allJobs state
-      // This helps avoid timing issues with React state updates
-      let existingJobs: Job[] = [];
-      
-      // Try to load from cache directly if allJobs is empty
-      if (allJobs.length === 0) {
-        const cachedData = loadJobsFromCache();
-        if (cachedData && cachedData.jobs.length > 0) {
-          existingJobs = [...cachedData.jobs];
-          console.log(`📊 Loaded ${existingJobs.length} jobs directly from cache`);
-        } else {
-          existingJobs = [...allJobs];
-          console.log(`📊 Using current state with ${existingJobs.length} jobs`);
-        }
-      } else {
-        existingJobs = [...allJobs];
-        console.log(`📊 Using current state with ${existingJobs.length} jobs`);
-      }
-      
-      // Create a Set of existing job IDs for faster lookup
-      const existingIds = new Set(existingJobs.map(job => job.id));
-      console.log(`🔢 Created lookup index with ${existingIds.size} job IDs`);
-      
-      // Fetch latest page of jobs (most recent 50)
-      const response = await getUserJobs(userEmail, { 
-        limit: 50,
-        cursor: null // Always start from the beginning for sync
+      // Fetch the most recent job from Monday.com
+      const checkResponse = await fetch('/api/monday/check-latest', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: userEmail,
+        }),
       });
       
-      console.log(`📥 Fetched ${response.items.length} recent jobs for sync`);
-      
-      // Debug: Log the first few IDs from both sets to verify comparison
-      const fetchedIds = response.items.map(job => job.id);
-      console.log(`🔍 First 5 fetched job IDs: ${fetchedIds.slice(0, 5).join(', ')}`);
-      console.log(`🔍 First 5 cached job IDs: ${Array.from(existingIds).slice(0, 5).join(', ')}`);
-      
-      // Find new jobs that aren't in our cache by ID comparison
-      const newJobs = response.items.filter(job => !existingIds.has(job.id));
-      
-      console.log(`🔍 Found ${newJobs.length} new jobs not in cache`);
-      
-      // Create a Set of fetched job IDs for faster lookup
-      const fetchedIdsSet = new Set(fetchedIds);
-      
-      // Find deleted jobs (jobs that are in cache but not in the fetched results)
-      // Only check the first 50 jobs in cache since that's what we're comparing against
-      const recentCachedJobs = existingJobs.slice(0, 50);
-      const deletedJobs = recentCachedJobs.filter(job => !fetchedIdsSet.has(job.id));
-      
-      console.log(`🔍 Found ${deletedJobs.length} jobs that were deleted`);
-      
-      let updatedJobs = [...existingJobs];
-      
-      if (newJobs.length > 0 || deletedJobs.length > 0) {
-        // Add new jobs to the beginning of the list
-        if (newJobs.length > 0) {
-          updatedJobs = [...newJobs, ...existingJobs];
-          console.log(`📈 Adding ${newJobs.length} new jobs to list`);
-        }
-        
-        // Remove deleted jobs from the list
-        if (deletedJobs.length > 0) {
-          const deletedIds = new Set(deletedJobs.map(job => job.id));
-          updatedJobs = updatedJobs.filter(job => !deletedIds.has(job.id));
-          console.log(`🗑️ Removing ${deletedJobs.length} deleted jobs from list`);
-        }
-        
-        console.log(`📊 Updated job list: ${existingJobs.length} existing → ${updatedJobs.length} total`);
-        
-        setAllJobs(updatedJobs);
-        
-        // Update total pages
-        const pages = Math.ceil(updatedJobs.length / itemsPerPageParam);
-        setTotalPages(pages || 1);
-        
-        // Save to cache
-        saveJobsToCache(updatedJobs, response.cursor, response.hasMore);
-        console.log(`💾 Updated cache with ${updatedJobs.length} total jobs`);
-        
-        // Show appropriate toast notifications
-        if (newJobs.length > 0) {
-          toast.success(`Found ${newJobs.length} new job${newJobs.length === 1 ? '' : 's'}`);
-        }
-        
-        if (deletedJobs.length > 0) {
-          toast.success(`Removed ${deletedJobs.length} deleted job${deletedJobs.length === 1 ? '' : 's'}`);
-        }
-      } else {
-        console.log('✅ No changes detected, cache is up to date');
+      if (!checkResponse.ok) {
+        const errorData = await checkResponse.json();
+        throw new Error(errorData.error || 'Failed to check latest job');
       }
       
-    } catch (error) {
-      console.error('❌ Error syncing jobs:', error);
-    } finally {
-      console.log('🔄 Sync process completed');
-      setIsSyncing(false);
-    }
-  }, [allJobs, isSyncing, saveJobsToCache, loadJobsFromCache, itemsPerPageParam, userEmail]);
-
-  // Now define fetchInitialJobs which uses syncLatestJobs
-  const fetchInitialJobs = useCallback(async (forceRefresh = false) => {
-    if (!userEmail) return;
-
-    try {
-      console.log(`🚀 Initial jobs load started${forceRefresh ? ' (force refresh)' : ''}`);
-      setIsLoading(true);
+      const checkData = await checkResponse.json();
       
-      // Check cache first
-      const cachedData = loadJobsFromCache();
-      
-      if (cachedData) {
-        // We have cached data, use it and sync in background
-        console.log(`📂 Found cached data with ${cachedData.jobs.length} jobs from ${new Date(cachedData.timestamp).toLocaleString()}`);
-        
-        // Safety check - store the job count before any operations
-        const cachedJobCount = cachedData.jobs.length;
-        
-        setAllJobs(cachedData.jobs);
-        setHasLoadedJobs(true);
-        setIsLoading(false);
-        
-        // Calculate total pages
-        const pages = Math.ceil(cachedData.jobs.length / itemsPerPageParam);
-        setTotalPages(pages || 1);
-        
-        // Sync in background to check for new jobs - exactly like refresh button
-        console.log('🔄 Starting background sync to check for updates...');
-        
-        // Use a separate async function to avoid state issues
-        const performSync = async () => {
-          // Pass the cached jobs directly to avoid timing issues with state updates
-          await syncLatestJobs();
-          
-          // Safety check - verify we didn't lose jobs after sync
-          if (allJobs.length < cachedJobCount * 0.9) {
-            console.warn(`⚠️ Job count decreased after sync: ${cachedJobCount} → ${allJobs.length}`);
-            console.log('🔄 Restoring original cached data');
-            
-            // Restore the original cached data
-            setAllJobs(cachedData.jobs);
-            
-            // Recalculate pages
-            const pages = Math.ceil(cachedData.jobs.length / itemsPerPageParam);
-            setTotalPages(pages || 1);
-            
-            // Re-save the original cache
-            saveJobsToCache(cachedData.jobs, cachedData.lastCursor, cachedData.hasMore);
-          }
-        };
-        
-        performSync();
+      // If the data is up to date, skip the full sync
+      if (checkData.isUpToDate) {
+        console.log('✅ Database is already up to date with Monday.com, skipping sync');
+        toast.success('Your job data is already up to date');
+        setIsSyncing(false);
         return;
       }
       
-      // No cache, fetch all jobs (first time only)
-      console.log('🔍 No valid cache found, fetching all jobs (first time load)...');
-      const fetchedJobs = await getAllUserJobs(userEmail);
-      console.log(`📥 Fetched all ${fetchedJobs.length} jobs from API`);
+      // If we get here, we need to do a full incremental sync
+      console.log('🔄 Database needs updating, proceeding with incremental sync...');
+      console.log('Reason:', checkData.message);
       
-      setAllJobs(fetchedJobs);
-      setHasLoadedJobs(true);
+      // Now check if another sync is already in progress before setting the lock
+      if (syncLockRef.current) {
+        console.log('🔒 Another sync is already in progress, skipping this sync');
+        setIsSyncing(false);
+        return;
+      }
       
-      // Calculate total pages
-      const pages = Math.ceil(fetchedJobs.length / itemsPerPageParam);
-      setTotalPages(pages || 1);
-      
-      // Save to cache
-      saveJobsToCache(fetchedJobs, null, false);
-      console.log(`💾 Saved ${fetchedJobs.length} jobs to cache`);
-      
+      // Set the lock and proceed with sync
+      syncLockRef.current = true;
+      await syncWithMonday(false); // Incremental sync
     } catch (error) {
-      console.error('❌ Error fetching jobs:', error);
-      toast.error('Failed to fetch jobs. Please try again.');
-    } finally {
-      console.log('🏁 Initial jobs load completed');
-      setIsLoading(false);
+      console.error('Error checking if sync is needed:', error);
+      setIsSyncing(false);
+      syncLockRef.current = false; // Make sure to release the lock on error
+      toast.error('Failed to check for updates');
     }
-  }, [userEmail, loadJobsFromCache, saveJobsToCache, syncLatestJobs, itemsPerPageParam]);
+  }, [userEmail, syncWithMonday, isSyncing]);
 
   const refreshJobs = useCallback(() => {
     if (!userEmail) return;
     
+    // Don't start a refresh if a sync is already in progress
+    if (syncLockRef.current || isSyncing) {
+      console.log('🔒 Sync already in progress, skipping refresh request');
+      toast.success('Sync already in progress, please wait...');
+      return;
+    }
+    
     // Start loading
     console.log('🔄 Manual refresh requested');
     setIsLoading(true);
-    toast.success('Refreshing jobs data...');
+    toast.success('Checking for updates...');
     
     // First sync to check for new jobs
     syncLatestJobs()
       .then(() => {
-        console.log('✅ Manual refresh completed');
-        setIsLoading(false);
+        // After sync completes or if no sync was needed
+        if (!syncInProgress) {
+          console.log('✅ No sync needed or sync completed quickly');
+          setIsLoading(false);
+        } else {
+          console.log('🔄 Sync started, polling will handle completion');
+          // The polling mechanism will handle fetching data and updating loading state
+          // when the sync completes
+        }
       })
       .catch(error => {
         console.error('❌ Error during manual refresh:', error);
         toast.error('Failed to refresh jobs. Please try again.');
         setIsLoading(false);
+        syncLockRef.current = false;
+        setSyncInProgress(false);
+        setIsSyncing(false);
       });
-  }, [userEmail, syncLatestJobs]);
+  }, [userEmail, syncLatestJobs, syncInProgress, isSyncing]);
+
+  // Now define fetchInitialJobs which uses syncLatestJobs and refreshJobs
+  const fetchInitialJobs = useCallback(async (forceRefresh = false) => {
+    if (!userEmail) return;
+    
+    // Don't start if a sync is already in progress
+    if (syncLockRef.current || isSyncing) {
+      console.log('🔒 Sync already in progress, skipping initial fetch');
+      return;
+    }
+
+    try {
+      console.log(`🚀 Initial jobs load started${forceRefresh ? ' (force refresh)' : ''}`);
+      setIsLoading(true);
+      
+      // Check if we have jobs in the database first
+      const response = await fetch('/api/jobs/sync');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch sync status');
+      }
+      
+      const syncStatus = await response.json();
+      
+      // If we have jobs in the database, fetch them
+      if (syncStatus.totalJobs > 0) {
+        console.log(`📊 Found ${syncStatus.totalJobs} jobs in database, fetching...`);
+        await fetchJobsFromDatabase();
+        
+        // Always check for updates after initial load
+        console.log('🔄 Initial load completed, checking for updates...');
+        setTimeout(() => {
+          refreshJobs();
+        }, 1000);
+      } else {
+        // No jobs in database, perform full sync
+        console.log('📊 No jobs found in database, performing full sync...');
+        toast.success('First time loading jobs. Starting full sync with Monday.com...');
+        
+        // Set the sync lock before starting a full sync
+        syncLockRef.current = true;
+        await syncWithMonday(true); // Force full sync
+        
+        // Wait a bit and then fetch jobs
+        setTimeout(async () => {
+          await fetchJobsFromDatabase();
+        }, 3000);
+      }
+      
+    } catch (error) {
+      console.error('❌ Error fetching jobs:', error);
+      toast.error('Failed to fetch jobs. Please try again.');
+      // Make sure to release the lock on error
+      syncLockRef.current = false;
+      setIsSyncing(false);
+      setSyncInProgress(false);
+    } finally {
+      console.log('🏁 Initial jobs load completed');
+      setIsLoading(false);
+    }
+  }, [userEmail, fetchJobsFromDatabase, syncLatestJobs, syncWithMonday, isSyncing, refreshJobs]);
 
   const changePage = useCallback((page: number, searchActive = false) => {
     if (page < 1 || page > totalPages) return;
     
     console.log(`📋 Changing to page ${page} of ${totalPages}`);
     setCurrentPage(page);
-    
-    // Remove the code that modifies allJobs
-    // When searching or filtering, we're using paginatedFilteredJobs for display
-    // which is calculated in the paginatedFilteredJobs useMemo
     
     // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -312,9 +344,6 @@ const useJobsData = (userEmail: string | null | undefined, itemsPerPageParam: nu
             // Calculate total pages
             const pages = Math.ceil(cachedData.jobs.length / itemsPerPageParam);
             setTotalPages(pages || 1);
-            
-            // Don't slice and set allJobs again - this causes an infinite loop
-            // The pagination is handled by paginatedFilteredJobs in the component
           }
         }
       }
@@ -353,11 +382,11 @@ const useJobsData = (userEmail: string | null | undefined, itemsPerPageParam: nu
         // If we have jobs already loaded, just sync like the refresh button
         if (allJobs.length > 0) {
           // If job count has dramatically decreased, something went wrong
-          if (previousJobCount > 0 && allJobs.length < previousJobCount * 0.9) {
+          if (previousJobCount > 0 && allJobs.length < previousJobCount * 0.9 && !syncLockRef.current) {
             console.warn(`⚠️ Job count decreased significantly: ${previousJobCount} → ${allJobs.length}`);
             console.log('🔄 Forcing full refresh to recover data');
             fetchInitialJobs(true);
-          } else {
+          } else if (!syncLockRef.current) {
             console.log('🔄 Normal reload, syncing for updates');
             syncLatestJobs();
           }
@@ -380,34 +409,102 @@ const useJobsData = (userEmail: string | null | undefined, itemsPerPageParam: nu
   useEffect(() => {
     const pages = Math.ceil(allJobs.length / itemsPerPageParam);
     setTotalPages(pages || 1);
-    
-    // We don't need to update paginatedJobs here anymore
-    // since we're using paginatedFilteredJobs for display
-    // which is calculated in the paginatedFilteredJobs useMemo
   }, [allJobs.length, itemsPerPageParam]);
 
-  // Add a clear cache function that will be returned from the hook
+  // Update the clearJobsCache function to perform a full sync
   const clearJobsCache = useCallback(() => {
-    if (!userEmail) return;
+    if (!userEmail || syncLockRef.current) return;
+    
+    console.log('🔄 Starting full sync with Monday.com...');
+    toast.success('Starting full sync with Monday.com...');
+    
+    // Set the sync lock
+    syncLockRef.current = true;
+    setIsLoading(true);
     
     try {
-      // Using the imported utility function to clear all job caches
-      const clearedCount = clearAllJobCaches();
-      console.log(`🗑️ Cleared ${clearedCount} job cache entries`);
-      
-      // Reset state
-      setAllJobs([]);
-      setHasLoadedJobs(false);
-      
-      toast.success(`Cache cleared. Reloading jobs data...`);
-      
-      // Refetch jobs
-      fetchInitialJobs(true);
+      // Perform a full sync
+      syncWithMonday(true)
+        .catch(error => {
+          console.error('Error during full sync:', error);
+          toast.error('Failed to sync with Monday.com. Please try again.');
+          // Make sure to release the lock on error
+          syncLockRef.current = false;
+          setIsSyncing(false);
+          setSyncInProgress(false);
+          setIsLoading(false);
+        });
     } catch (error) {
-      console.error('❌ Error clearing cache:', error);
-      toast.error('Failed to clear cache. Please try again.');
+      console.error('❌ Error starting full sync:', error);
+      toast.error('Failed to start sync. Please try again.');
+      // Make sure to release the lock on error
+      syncLockRef.current = false;
+      setIsSyncing(false);
+      setSyncInProgress(false);
+      setIsLoading(false);
     }
-  }, [userEmail, fetchInitialJobs]);
+  }, [userEmail, syncWithMonday]);
+
+  // Add a polling effect to check sync status periodically
+  useEffect(() => {
+    if (!userEmail || !hasLoadedJobs) return;
+    
+    let intervalId: NodeJS.Timeout;
+    
+    // Check if a sync is in progress
+    const checkSyncStatus = async () => {
+      try {
+        const response = await fetch('/api/monday/sync');
+        if (!response.ok) {
+          console.error('Error checking sync status:', await response.text());
+          return false;
+        }
+        
+        const data = await response.json();
+        
+        // If sync is in progress, update state
+        if (data.status === 'in_progress') {
+          console.log('🔄 Sync in progress, will fetch updated data soon');
+          setSyncInProgress(true);
+          return true;
+        }
+        
+        // If sync was in progress but now it's completed
+        if (syncInProgress || syncLockRef.current) {
+          console.log('✅ Sync completed, releasing lock and fetching updated data');
+          setSyncInProgress(false);
+          syncLockRef.current = false;
+          setIsSyncing(false);
+          
+          // Fetch updated data
+          await fetchJobsFromDatabase();
+          toast.success('Sync completed successfully');
+        }
+        
+        return false;
+      } catch (error) {
+        console.error('Error checking sync status:', error);
+        // On error, release the lock to prevent deadlocks
+        syncLockRef.current = false;
+        setIsSyncing(false);
+        setSyncInProgress(false);
+        return false;
+      }
+    };
+    
+    // Initial check
+    checkSyncStatus().then(isInProgress => {
+      if (isInProgress) {
+        // If sync is in progress, set up polling
+        intervalId = setInterval(checkSyncStatus, 5000); // Check every 5 seconds
+      }
+    });
+    
+    // Clean up interval
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [userEmail, hasLoadedJobs, fetchJobsFromDatabase, syncInProgress]);
 
   return { 
     allJobs,
@@ -418,6 +515,7 @@ const useJobsData = (userEmail: string | null | undefined, itemsPerPageParam: nu
     totalPages,
     changePage,
     clearJobsCache,
+    lastSynced
   };
 };
 
@@ -444,6 +542,7 @@ export default function JobsPage() {
     totalPages,
     changePage,
     clearJobsCache,
+    lastSynced
   } = useJobsData(session?.user?.email, itemsPerPage);
 
   // Update loading state based on isLoading and isSyncing
@@ -672,7 +771,20 @@ export default function JobsPage() {
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Job Board</h1>
               {session?.user?.email && (
-                <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{session.user.email}</p>
+                <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                  {session.user.email}
+                  {lastSynced && (
+                    <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
+                      Last synced: {new Date(lastSynced).toLocaleString(undefined, {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
+                  )}
+                </p>
               )}
             </div>
             <SearchBar value={searchQuery} onChange={setSearchQuery} />
@@ -680,6 +792,7 @@ export default function JobsPage() {
 
           {/* Controls */}
           <div className="flex flex-col sm:flex-row gap-4 flex-wrap mb-6">
+            <div className="relative group">
             <button
               onClick={refreshJobs}
               disabled={loadingState === 'syncing' || loadingState === 'loading'}
@@ -698,6 +811,11 @@ export default function JobsPage() {
               )}
               {loadingState === 'syncing' ? 'Syncing...' : 'Refresh Jobs'}
             </button>
+              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap shadow-lg z-10">
+                Syncs with Monday.com and updates the database
+                <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-t-4 border-gray-800 border-l-4 border-l-transparent border-r-4 border-r-transparent"></div>
+              </div>
+            </div>
             
             {/* Clear Cache button with tooltip */}
             <div className="relative group">
@@ -713,12 +831,12 @@ export default function JobsPage() {
                          disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <svg className="mr-2 h-5 w-5 text-gray-400 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
-                Clear Cache
+                Full Sync
               </button>
               <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap shadow-lg z-10">
-                Use this if job data appears incorrect or out of date
+                Performs a complete sync with Monday.com
                 <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-t-4 border-gray-800 border-l-4 border-l-transparent border-r-4 border-r-transparent"></div>
               </div>
             </div>
@@ -835,6 +953,7 @@ export default function JobsPage() {
                   job={job}
                   isExpanded={expandedJobIds.includes(job.id)}
                   onToggle={() => toggleJobExpansion(job.id)}
+                  isGridView={true}
                 />
               ))}
               {loadingState === 'syncing' && (
@@ -852,6 +971,7 @@ export default function JobsPage() {
                   job={job}
                   isExpanded={expandedJobIds.includes(job.id)}
                   onToggle={() => toggleJobExpansion(job.id)}
+                  isGridView={false}
                 />
               ))}
               {loadingState === 'syncing' && (
