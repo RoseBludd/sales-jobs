@@ -81,7 +81,7 @@ const useJobsData = (userEmail: string | null | undefined, itemsPerPageParam: nu
       setIsLoading(true);
       console.log('📊 Fetching jobs from database...');
       
-      const response = await fetch(`/api/jobs/database?pageSize=1000`);
+      const response = await fetch(`/api/jobs/database?pageSize=10000`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch jobs from database');

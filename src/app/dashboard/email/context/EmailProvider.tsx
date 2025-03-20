@@ -15,6 +15,7 @@ import { useSession } from 'next-auth/react';
 interface EmailContextType {
   // Email data
   allEmails: Email[];
+  allFoldersEmails: Record<string, Email[]>;
   filteredEmails: Email[];
   paginatedEmails: Email[];
   totalEmails: number;
@@ -65,6 +66,7 @@ interface EmailContextType {
 const EmailContext = createContext<EmailContextType>({
   // Default values would go here, but we're using a non-null assertion in the provider
   allEmails: [],
+  allFoldersEmails: {},
   filteredEmails: [],
   paginatedEmails: [],
   totalEmails: 0,
@@ -114,6 +116,7 @@ export const EmailProvider = ({ children }: { children: React.ReactNode }) => {
   // Use our email cache hook
   const {
     allEmails,
+    allFoldersEmails,
     filteredEmails,
     paginatedEmails,
     totalEmails,
@@ -202,6 +205,7 @@ export const EmailProvider = ({ children }: { children: React.ReactNode }) => {
   // The context value
   const contextValue: EmailContextType = {
     allEmails,
+    allFoldersEmails,
     filteredEmails,
     paginatedEmails,
     totalEmails,

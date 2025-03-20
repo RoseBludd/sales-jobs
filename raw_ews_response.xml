@@ -1,0 +1,1551 @@
+<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <Header xmlns="http://schemas.xmlsoap.org/soap/envelope/">
+        <ServerVersionInfo MajorVersion="14"
+                           MinorVersion="2"
+                           MajorBuildNumber="390"
+                           MinorBuildNumber="3"
+                           Version="Exchange2010_SP2"
+                           xmlns="http://schemas.microsoft.com/exchange/services/2006/types" />
+    </Header>
+    <soap:Body>
+        <m:FindItemResponse xmlns:m="http://schemas.microsoft.com/exchange/services/2006/messages"
+                            xmlns:t="http://schemas.microsoft.com/exchange/services/2006/types">
+            <m:ResponseMessages>
+                <m:FindItemResponseMessage ResponseClass="Success">
+                    <m:ResponseCode>NoError</m:ResponseCode>
+                    <m:RootFolder IncludesLastItemInRange="true"
+                                  TotalItemsInView="43">
+                        <t:Items>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAAC1AA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAA0g==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>Fwd: phone</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-12-10T21:39:26Z</t:DateTimeReceived>
+                                <t:Size>12756</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-12-10T21:39:21Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:49Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>Jordy Black</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:49Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAAC0AA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAA0Q==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>📆 Just 1 Day Left to Save 15%!</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-12-05T21:00:33Z</t:DateTimeReceived>
+                                <t:Size>39395</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-12-05T21:00:32Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:48Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>j.black@restoremastersllc.com</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:48Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACzAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAA0A==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>Jordyn Black: Your WeRoofAmerica Email Is Ready To Use</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-12-05T15:54:34Z</t:DateTimeReceived>
+                                <t:Size>9697</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-12-05T15:54:24Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:48Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>j.black@restoremastersllc.com</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:48Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACyAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAAzw==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>Jordyn Black: Your WeRoofAmerica Email Is Ready To Use</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-12-04T17:12:58Z</t:DateTimeReceived>
+                                <t:Size>10246</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-12-04T17:12:04Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:47Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>Jordy Black</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:47Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACxAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAAzg==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>Don’t let low data slow you down.</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-12-04T15:05:27Z</t:DateTimeReceived>
+                                <t:Size>39679</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-12-04T15:05:27Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:46Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>j.black@restoremastersllc.com</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:46Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACwAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAAzQ==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>Field Sales Strategies You Can’t Miss.</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-12-03T17:39:19Z</t:DateTimeReceived>
+                                <t:Size>53364</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-12-03T17:39:02Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:45Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>j.black@restoremastersllc.com</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:45Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACvAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAAzA==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>Save the steps 👣</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-12-02T15:05:25Z</t:DateTimeReceived>
+                                <t:Size>38745</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-12-02T15:05:25Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:44Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>j.black@restoremastersllc.com</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:44Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACuAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAAyw==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>(3/9) Edit PDFs right in Dropbox</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-12-01T13:40:55Z</t:DateTimeReceived>
+                                <t:Size>51740</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-12-01T13:40:54Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:44Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>j.black@restoremastersllc.com</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:44Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACtAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAAyg==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>Stay on top of your to-do list with SPOTIO’s calendar integration.</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-11-28T15:04:48Z</t:DateTimeReceived>
+                                <t:Size>40727</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-11-28T15:04:43Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:43Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>j.black@restoremastersllc.com</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:43Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACsAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAAyQ==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>Look up for work</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-11-27T20:12:28Z</t:DateTimeReceived>
+                                <t:Size>9046</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-11-27T20:12:14Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:42Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>j.black@restoremastersllc.com</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:42Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACrAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAAyA==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>(1/9) You have pending action items in Dropbox</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-11-27T16:00:08Z</t:DateTimeReceived>
+                                <t:Size>87246</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-11-27T16:00:07Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:41Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>j.black@restoremastersllc.com</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:41Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACqAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAAxw==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>Hi Jordyn, we noticed a new sign in to your Dropbox account</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-11-27T15:50:00Z</t:DateTimeReceived>
+                                <t:Size>14565</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-11-27T15:50:00Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:40Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>j.black@restoremastersllc.com</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:40Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACpAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAAxg==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>RFX | New Account</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-11-26T22:32:19Z</t:DateTimeReceived>
+                                <t:Size>9849</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-11-26T22:32:18Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:40Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>j.black@restoremastersllc.com</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:40Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACnAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAAxA==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>Weather History Report</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-11-21T00:50:31Z</t:DateTimeReceived>
+                                <t:Size>50805</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-11-21T00:50:31Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:38Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>j.black@restoremastersllc.com</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:38Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACmAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAAww==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>[Webinar] Unlock Field Sales Success: Reserve Your Spot. </t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-11-20T16:11:04Z</t:DateTimeReceived>
+                                <t:Size>51561</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-11-20T16:10:59Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:37Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>j.black@restoremastersllc.com</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:37Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAAClAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAAwg==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>Weather History Report</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-11-20T01:14:28Z</t:DateTimeReceived>
+                                <t:Size>50823</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-11-20T01:14:27Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:37Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>j.black@restoremastersllc.com</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:37Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACkAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAAwQ==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>Weather History Report</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-11-20T01:07:31Z</t:DateTimeReceived>
+                                <t:Size>50805</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-11-20T01:07:31Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:36Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>j.black@restoremastersllc.com</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:36Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:CalendarItem>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACjAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAAwA==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Appointment</t:ItemClass>
+                                <t:Subject>Engine reservation at Super 8 by Wyndham Hays KS</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-11-19T15:11:08Z</t:DateTimeReceived>
+                                <t:Size>55458</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:InReplyTo>&lt;673caa608b31b_14daf82332d@ip-192-168-5-218.ec2.internal.mail&gt;</t:InReplyTo>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-11-19T15:10:55Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:35Z</t:DateTimeCreated>
+                                <t:ReminderIsSet>false</t:ReminderIsSet>
+                                <t:DisplayCc />
+                                <t:DisplayTo>Jordyn Black; Jesse Peterson</t:DisplayTo>
+                                <t:HasAttachments>true</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:35Z</t:LastModifiedTime>
+                                <t:UID>de61b7a9-c4da-4f92-8923-835eeacac056</t:UID>
+                                <t:DateTimeStamp>2024-12-11T06:12:35Z</t:DateTimeStamp>
+                                <t:Start>2024-11-19T00:00:00Z</t:Start>
+                                <t:End>2024-11-24T00:00:00Z</t:End>
+                                <t:IsAllDayEvent>true</t:IsAllDayEvent>
+                                <t:LegacyFreeBusyStatus>Busy</t:LegacyFreeBusyStatus>
+                                <t:IsMeeting>false</t:IsMeeting>
+                                <t:IsCancelled>false</t:IsCancelled>
+                                <t:IsRecurring>false</t:IsRecurring>
+                                <t:MeetingRequestWasSent>false</t:MeetingRequestWasSent>
+                                <t:IsResponseRequested>false</t:IsResponseRequested>
+                                <t:CalendarItemType>Single</t:CalendarItemType>
+                                <t:MyResponseType>Unknown</t:MyResponseType>
+                                <t:TimeZone>(UTC) Coordinated Universal Time</t:TimeZone>
+                                <t:AppointmentState>0</t:AppointmentState>
+                                <t:AllowNewTimeProposal>true</t:AllowNewTimeProposal>
+                                <t:IsOnlineMeeting>false</t:IsOnlineMeeting>
+                            </t:CalendarItem>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACiAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAAvw==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>Your Travel request has been approved.</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-11-19T13:44:39Z</t:DateTimeReceived>
+                                <t:Size>14478</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-11-19T13:44:38Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:34Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>j.black@restoremastersllc.com</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:34Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAAChAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAAvg==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>Weather History Report</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-11-19T02:14:07Z</t:DateTimeReceived>
+                                <t:Size>50815</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-11-19T02:14:07Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:33Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>j.black@restoremastersllc.com</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:33Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACgAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAAvQ==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>Restore masters damage assessment</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-11-17T22:19:26Z</t:DateTimeReceived>
+                                <t:Size>21447</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-11-17T22:19:09Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:23Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>JP@guardianstorage.com</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:23Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACfAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAAvA==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>Weather History Report</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-11-16T19:04:05Z</t:DateTimeReceived>
+                                <t:Size>50825</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-11-16T19:04:04Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:22Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>j.black@restoremastersllc.com</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:22Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACeAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAAuw==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>Weather History Report</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-11-16T18:51:17Z</t:DateTimeReceived>
+                                <t:Size>50836</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-11-16T18:51:17Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:21Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>j.black@restoremastersllc.com</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:21Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACdAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAAug==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>Your request has been approved.</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-11-14T16:53:05Z</t:DateTimeReceived>
+                                <t:Size>13651</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-11-14T16:53:04Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:20Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>j.black@restoremastersllc.com</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:20Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACcAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAAuQ==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>🌩️ [Turn "No Damage" Leads Into $$$] 💼 Stay Ahead After the Storm!</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-11-13T00:50:46Z</t:DateTimeReceived>
+                                <t:Size>39260</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-11-13T00:49:03Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:19Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>j.black@restoremastersllc.com</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:19Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACbAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAAuA==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>Code to verify email in Spotio</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-11-12T23:02:25Z</t:DateTimeReceived>
+                                <t:Size>12969</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-11-12T23:02:24Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:18Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>j.black@restoremastersllc.com</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:18Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACaAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAAtw==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>Re: Jordyn Black - 2nd form of identification</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-11-12T13:49:03Z</t:DateTimeReceived>
+                                <t:Size>2965353</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:InReplyTo>&lt;CAGRLq4K0D8wR55q6rpHuGhSwc0EU9f+eLdM061rWcpFAv0dQ3Q@mail.gmail.com&gt;</t:InReplyTo>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-11-12T13:48:48Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:15Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>Jordyn Black</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:15Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACZAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAAtg==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>We Are Kicking Off the Week Warm, But Cooler Air Is Moving in from the West!</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-11-11T18:15:25Z</t:DateTimeReceived>
+                                <t:Size>37149</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-11-11T18:15:25Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:10Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>j.black@restoremastersllc.com</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:10Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACYAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAAtQ==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>Re: Jordyn Black - 2nd form of identification</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-11-11T17:23:35Z</t:DateTimeReceived>
+                                <t:Size>9194</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:InReplyTo>&lt;CAGRLq4+cW22RJmF-aJXVSiW+56U4O5t9H4JR-W6vBaaLbPbHMw@mail.gmail.com&gt;</t:InReplyTo>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-11-11T17:23:23Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:10Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>Jordyn Black</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:10Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACXAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAAtA==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>Fwd: Welcome Jordyn Black! Here are Your Next Steps....</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-11-11T00:30:39Z</t:DateTimeReceived>
+                                <t:Size>29254</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-11-11T00:30:25Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:09Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>j.black@restoremastersllc.com</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:09Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACWAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAAsw==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>🤯 Free HailTrace Reports?  Open Now to find out how!🤯</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-11-08T19:45:33Z</t:DateTimeReceived>
+                                <t:Size>44998</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-11-08T19:43:58Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:08Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>j.black@restoremastersllc.com</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:08Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACVAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAAsg==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>THE BIG HEADLINE today is the level 2 storm risk for Dallas</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-11-08T18:20:39Z</t:DateTimeReceived>
+                                <t:Size>36812</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-11-08T18:20:37Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:08Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>j.black@restoremastersllc.com</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:08Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACUAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAAsQ==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>Large hail, strong wind, and level 2 tornado risk for storms today across western and central Texas today!</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-11-07T18:18:04Z</t:DateTimeReceived>
+                                <t:Size>37247</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-11-07T18:17:59Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:07Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>j.black@restoremastersllc.com</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:07Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACTAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAAsA==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>Severe weather pauses briefly today, but watch for rising waters! The flood threat still lingers over Georgia and South Carolina.</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-11-06T18:13:10Z</t:DateTimeReceived>
+                                <t:Size>36716</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-11-06T18:13:10Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:06Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>j.black@restoremastersllc.com</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:06Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACSAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAArw==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>We’re Monitoring Two Areas for Storms Today!</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-11-05T18:16:16Z</t:DateTimeReceived>
+                                <t:Size>37283</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-11-05T18:16:15Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:05Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>j.black@restoremastersllc.com</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:05Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACRAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAArg==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>Imapsync transferred your account</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-11-04T19:49:03Z</t:DateTimeReceived>
+                                <t:Size>2797</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-11-04T19:49:03Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:04Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>Jordy Black</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:04Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACQAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAArQ==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>Security alert</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-11-04T19:42:57Z</t:DateTimeReceived>
+                                <t:Size>14228</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-11-04T19:42:56Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:04Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>j.black@restoremastersllc.com</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:04Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACPAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAArA==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>2-Step Verification turned on</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-11-04T19:42:32Z</t:DateTimeReceived>
+                                <t:Size>14462</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-11-04T19:42:31Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:03Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>j.black@restoremastersllc.com</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:03Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACOAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAAqw==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>Storms Ongoing now through the Overnight</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-11-04T18:25:46Z</t:DateTimeReceived>
+                                <t:Size>36820</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-11-04T18:25:45Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:02Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>j.black@restoremastersllc.com</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:02Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACNAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAAqg==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>Jordyn, welcome to Google Workspace 🎉</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-11-02T16:20:37Z</t:DateTimeReceived>
+                                <t:Size>60466</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-11-02T16:20:36Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:01Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>j.black@restoremastersllc.com</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:01Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACMAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAAqQ==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>Your account information for your Virtual Training</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-11-01T20:17:50Z</t:DateTimeReceived>
+                                <t:Size>20185</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-11-01T20:17:47Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:01Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>J.black@restoremastersllc.com</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:01Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACLAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAAqA==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>Active Severe Pattern Through the Weekend</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-11-01T17:20:07Z</t:DateTimeReceived>
+                                <t:Size>36239</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-11-01T17:20:03Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:12:00Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>j.black@restoremastersllc.com</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:12:00Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                            <t:Message>
+                                <t:ItemId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACRbJhEOFR2RGBoO6B7IqYcx9AAAAAACKAA=="
+                                          ChangeKey="yYRDhUdkRgaDugeyKmHMfQAAAAAApw==" />
+                                <t:ParentFolderId Id="AABuL089bS0xY2QzM2RlMWE1NTM0YmU5YmM2YTlmOTUwMTNmMmJjOC9PVT1BbWF6b24gV29ya01haWwvQ049UmVjaXBpZW50cy9DTj02OWY3NjZjNS1jNmU4LTRkZTktYjk0MS00ZmMwYjVjODRiZDkWyYRDhUdkRgaDugeyKmHMfQAAAAAACQAA"
+                                                  ChangeKey="AQAAAA==" />
+                                <t:ItemClass>IPM.Note</t:ItemClass>
+                                <t:Subject>Your account information for your Virtual Training</t:Subject>
+                                <t:Sensitivity>Normal</t:Sensitivity>
+                                <t:DateTimeReceived>2024-11-01T12:53:50Z</t:DateTimeReceived>
+                                <t:Size>20208</t:Size>
+                                <t:Importance>Normal</t:Importance>
+                                <t:IsSubmitted>false</t:IsSubmitted>
+                                <t:IsDraft>false</t:IsDraft>
+                                <t:IsFromMe>false</t:IsFromMe>
+                                <t:IsResend>false</t:IsResend>
+                                <t:IsUnmodified>false</t:IsUnmodified>
+                                <t:DateTimeSent>2024-11-01T12:53:48Z</t:DateTimeSent>
+                                <t:DateTimeCreated>2024-12-11T06:11:59Z</t:DateTimeCreated>
+                                <t:DisplayCc />
+                                <t:DisplayTo>j.black@restoremastersllc.com</t:DisplayTo>
+                                <t:HasAttachments>false</t:HasAttachments>
+                                <t:EffectiveRights>
+                                    <t:CreateAssociated>false</t:CreateAssociated>
+                                    <t:CreateContents>false</t:CreateContents>
+                                    <t:CreateHierarchy>false</t:CreateHierarchy>
+                                    <t:Delete>true</t:Delete>
+                                    <t:Modify>true</t:Modify>
+                                    <t:Read>true</t:Read>
+                                </t:EffectiveRights>
+                                <t:LastModifiedName>j.black</t:LastModifiedName>
+                                <t:LastModifiedTime>2024-12-11T06:11:59Z</t:LastModifiedTime>
+                                <t:IsReadReceiptRequested>false</t:IsReadReceiptRequested>
+                                <t:IsDeliveryReceiptRequested>false</t:IsDeliveryReceiptRequested>
+                                <t:IsRead>true</t:IsRead>
+                            </t:Message>
+                        </t:Items>
+                    </m:RootFolder>
+                </m:FindItemResponseMessage>
+            </m:ResponseMessages>
+        </m:FindItemResponse>
+    </soap:Body>
+</soap:Envelope>

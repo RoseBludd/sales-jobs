@@ -66,7 +66,7 @@ function mapDatabaseEmailToEmail(dbEmail: any): Email {
 /**
  * Fetch emails from API
  */
-async function fetchEmailsFromApi(folder: string, pageSize = 50, page = 1, forceSync = false): Promise<{
+async function fetchEmailsFromApi(folder: string, pageSize = 1000, page = 1, forceSync = false): Promise<{
   emails: Email[];
   total: number;
   lastSynced: number;
@@ -154,6 +154,14 @@ export async function getEmails(
   
   if (isCached && !checkNewOnly) {
     console.log(`Using cached emails for folder ${folder}`);
+    
+    // If the cache is empty, force a refresh to check if there are actually no emails
+    // or if we just haven't synced yet
+    if (folderCache.emails.length === 0 && !forceRefresh) {
+      console.log(`Cache for ${folder} is empty, forcing refresh`);
+      return getEmails(folder, true, checkNewOnly);
+    }
+    
     return {
       emails: folderCache.emails,
       total: folderCache.total,
@@ -164,7 +172,7 @@ export async function getEmails(
   
   // Fetch emails from API
   try {
-    const result = await fetchEmailsFromApi(folder, 50, 1, forceRefresh);
+    const result = await fetchEmailsFromApi(folder, 1000, 1, forceRefresh);
     
     // Update cache
     emailCache[folder] = {

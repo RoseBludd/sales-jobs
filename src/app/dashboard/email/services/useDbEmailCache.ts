@@ -12,16 +12,28 @@ import {
 } from './emailCache';
 import { useSession } from 'next-auth/react';
 
+// Define all folder types
+const ALL_FOLDERS = ['inbox', 'sent', 'draft', 'trash', 'spam'] as const;
+type FolderType = typeof ALL_FOLDERS[number];
+
 /**
  * Custom hook to manage email cache and fetching from database
  */
 export default function useDbEmailCache(currentFolder: string) {
   // States for email data
   const [allEmails, setAllEmails] = useState<Email[]>([]);
+  const [allFoldersEmails, setAllFoldersEmails] = useState<Record<FolderType, Email[]>>({
+    inbox: [],
+    sent: [],
+    draft: [],
+    trash: [],
+    spam: []
+  });
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
   const [totalEmails, setTotalEmails] = useState<number>(0);
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
+  const [initialLoadComplete, setInitialLoadComplete] = useState<boolean>(false);
   
   // States for UI/search/filter
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -45,6 +57,57 @@ export default function useDbEmailCache(currentFolder: string) {
     }
   }, [session?.user?.email]);
   
+  // Load emails from all folders on initial load
+  const loadAllFolders = useCallback(async () => {
+    if (!session?.user?.email || initialLoadComplete) return;
+    
+    setLoading(true);
+    
+    try {
+      console.log('Loading emails from all folders...');
+      const folderPromises = ALL_FOLDERS.map(async (folder) => {
+        try {
+          const result = await getEmails(folder, false, false);
+          return { folder, emails: result.emails, total: result.total };
+        } catch (err) {
+          console.error(`Error loading emails for ${folder}:`, err);
+          return { folder, emails: [], total: 0 };
+        }
+      });
+      
+      const results = await Promise.all(folderPromises);
+      
+      // Update all folders emails
+      const newAllFoldersEmails = { ...allFoldersEmails };
+      
+      results.forEach(({ folder, emails }) => {
+        newAllFoldersEmails[folder as FolderType] = emails;
+      });
+      
+      setAllFoldersEmails(newAllFoldersEmails);
+      setInitialLoadComplete(true);
+      
+      // Set current folder emails
+      const currentFolderResult = results.find(r => r.folder === currentFolder);
+      if (currentFolderResult) {
+        setAllEmails(currentFolderResult.emails);
+        setTotalEmails(currentFolderResult.total);
+      }
+      
+      setError(null);
+    } catch (err) {
+      console.error('Error loading all folders:', err);
+      setError(err instanceof Error ? err : new Error('Failed to load emails from all folders'));
+    } finally {
+      setLoading(false);
+    }
+  }, [session?.user?.email, initialLoadComplete, currentFolder, allFoldersEmails]);
+  
+  // Load all folders on initial load
+  useEffect(() => {
+    loadAllFolders();
+  }, [loadAllFolders]);
+  
   // Fetch emails when the folder changes or when explicitly triggered
   const fetchEmails = useCallback(async (force = false) => {
     if (!session?.user?.email) return;
@@ -55,6 +118,31 @@ export default function useDbEmailCache(currentFolder: string) {
       setAllEmails(result.emails);
       setTotalEmails(result.total);
       setLastSynced(new Date(result.lastSynced));
+      
+      // Update the emails for this folder in allFoldersEmails
+      setAllFoldersEmails(prev => ({
+        ...prev,
+        [currentFolder as FolderType]: result.emails
+      }));
+      
+      // If no emails were found, trigger a sync
+      if (result.emails.length === 0 && !force) {
+        console.log(`No emails found for ${currentFolder}, triggering sync`);
+        // Trigger a sync by calling getEmails with force=true
+        const syncResult = await getEmails(currentFolder, true, false);
+        
+        // Update with the sync results
+        setAllEmails(syncResult.emails);
+        setTotalEmails(syncResult.total);
+        setLastSynced(new Date(syncResult.lastSynced));
+        
+        // Update the emails for this folder in allFoldersEmails
+        setAllFoldersEmails(prev => ({
+          ...prev,
+          [currentFolder as FolderType]: syncResult.emails
+        }));
+      }
+      
       setError(null);
     } catch (err) {
       console.error(`Error fetching emails for ${currentFolder}:`, err);
@@ -68,8 +156,10 @@ export default function useDbEmailCache(currentFolder: string) {
   
   // Fetch emails when the folder changes
   useEffect(() => {
-    fetchEmails(false);
-  }, [fetchEmails, currentFolder]);
+    if (initialLoadComplete) {
+      fetchEmails(false);
+    }
+  }, [fetchEmails, currentFolder, initialLoadComplete]);
   
   // Filter emails based on search query
   useEffect(() => {
@@ -183,6 +273,7 @@ export default function useDbEmailCache(currentFolder: string) {
   return {
     // Email data
     allEmails,
+    allFoldersEmails,
     filteredEmails,
     paginatedEmails,
     totalEmails,

@@ -163,17 +163,44 @@ export default function EmailPage({ folder, onError }: EmailPageProps) {
   // Handle email selection - fixed to avoid the TypeError
   const handleSelectEmail = useCallback(async (emailId: string, isRead: boolean) => {
     try {
+      console.log(`Selecting email with ID: ${emailId}`);
+      
       // If the email isn't already marked as read, mark it as read
       if (!isRead) {
-        const email = await fetchEmailById(emailId);
-        if (!email.isRead) {
-          updateEmail({ ...email, isRead: true });
+        try {
+          const email = await fetchEmailById(emailId);
+          if (email && !email.isRead) {
+            updateEmail({ ...email, isRead: true });
+          }
+        } catch (readError) {
+          console.error('Error marking email as read:', readError);
+          // Continue with selection even if marking as read fails
         }
       }
       
       // Fetch the full email to set as selected
-      const fullEmail = await fetchEmailById(emailId);
-      setSelectedEmail(fullEmail);
+      try {
+        console.log(`Fetching full email details for ID: ${emailId}`);
+        const fullEmail = await fetchEmailById(emailId);
+        
+        if (fullEmail) {
+          console.log(`Successfully fetched email with ID: ${emailId}`);
+          setSelectedEmail(fullEmail);
+        } else {
+          console.error(`Email not found with ID: ${emailId}`);
+          toast.error('Email not found');
+          if (setError) {
+            setError('Email not found');
+          }
+        }
+      } catch (fetchError) {
+        console.error(`Error fetching email details for ID ${emailId}:`, fetchError);
+        if (setError) {
+          setError('Failed to load email details');
+        }
+        
+        toast.error('Could not load email details');
+      }
     } catch (error) {
       console.error('Error selecting email:', error);
       if (setError) {
@@ -247,23 +274,33 @@ export default function EmailPage({ folder, onError }: EmailPageProps) {
     setIsSubmitting(true);
     
     try {
-      // TODO: Add your email sending logic here
-      const newEmail = {
-        id: Date.now(), // Temporary ID
-        folder: 'sent',
-        from: 'me@example.com', // Replace with user email
-        fromName: 'Me',
+      // Get the current user's session
+      const session = await fetch('/api/auth/session');
+      const sessionData = await session.json();
+      const userEmail = sessionData?.user?.email || 'user@example.com';
+      
+      // Prepare email data for API
+      const apiEmailData = {
         to: emailData.to,
         subject: emailData.subject,
         body: emailData.body,
-        date: new Date().toISOString(),
-        isRead: true,
-        isStarred: false,
-        attachments: []
+        from: userEmail,
+        fromName: sessionData?.user?.name || 'User'
       };
       
-      // Add to sent folder
-      addEmail({ ...newEmail } as Email);
+      // Send email using the API
+      const response = await fetch('/api/emails', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(apiEmailData),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to send email');
+      }
       
       // Close compose modal
       setShowCompose(false);
@@ -271,16 +308,21 @@ export default function EmailPage({ folder, onError }: EmailPageProps) {
       
       // Show success toast
       toast.success('Email sent successfully');
+      
+      // Refresh the sent folder to show the new email
+      if (folder === 'sent') {
+        refreshEmails(true);
+      }
     } catch (error) {
       console.error('Error sending email:', error);
-      setError('Failed to send email');
+      setError(error instanceof Error ? error.message : 'Failed to send email');
       
       // Show error toast
-      toast.error('Failed to send email');
+      toast.error(error instanceof Error ? error.message : 'Failed to send email');
     } finally {
       setIsSubmitting(false);
     }
-  }, [addEmail, setError, setShowCompose]);
+  }, [setError, setShowCompose, folder, refreshEmails]);
 
   // Toggle filters visibility
   const toggleFilters = useCallback(() => {

@@ -36,6 +36,20 @@ export default function EmailDetail({ emailId, onBack, onDelete, isMobileView = 
       try {
         setIsActuallyLoading(true);
         setError(null);
+        
+        // Check if we need to trigger a sync
+        try {
+          // Make a request to the API endpoint that will check for emails and trigger a sync if needed
+          const checkResponse = await fetch(`/api/emails/${emailId}`);
+          
+          if (!checkResponse.ok) {
+            console.warn('Email check failed, continuing with normal fetch');
+          }
+        } catch (checkError) {
+          console.error('Error checking email status:', checkError);
+          // Continue with normal fetch even if check fails
+        }
+        
         const emailData = await fetchEmailById(emailId);
         setEmail(emailData);
       } catch (err) {

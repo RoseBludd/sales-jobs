@@ -17,21 +17,36 @@ const EmailSidebarContent = () => {
   // Use the shared context for shared state
   const {
     allEmails,
+    allFoldersEmails,
     isLoading,
     setShowCompose,
-    handleSetShowCompose
+    handleSetShowCompose,
+    setSelectedEmail
   } = useEmailContext();
   
-  // Count unread emails for each folder
+  // Count unread emails for each folder using allFoldersEmails
   const unreadCounts = {
-    inbox: allEmails ? allEmails.filter(e => e.folder === 'inbox' && !e.isRead).length : 0,
-    sent: 0,
-    draft: allEmails ? allEmails.filter(e => e.folder === 'draft').length : 0,
-    trash: 0,
-    spam: allEmails ? allEmails.filter(e => e.folder === 'spam' && !e.isRead).length : 0
+    inbox: allFoldersEmails?.inbox ? allFoldersEmails.inbox.filter(e => !e.isRead).length : 0,
+    sent: 0, // Sent emails are always read
+    draft: allFoldersEmails?.draft ? allFoldersEmails.draft.length : 0, // All drafts count as "unread"
+    trash: allFoldersEmails?.trash ? allFoldersEmails.trash.filter(e => !e.isRead).length : 0,
+    spam: allFoldersEmails?.spam ? allFoldersEmails.spam.filter(e => !e.isRead).length : 0
+  };
+  
+  // Count total emails in each folder using allFoldersEmails
+  const totalCounts = {
+    inbox: allFoldersEmails?.inbox ? allFoldersEmails.inbox.length : 0,
+    sent: allFoldersEmails?.sent ? allFoldersEmails.sent.length : 0,
+    draft: allFoldersEmails?.draft ? allFoldersEmails.draft.length : 0,
+    trash: allFoldersEmails?.trash ? allFoldersEmails.trash.length : 0,
+    spam: allFoldersEmails?.spam ? allFoldersEmails.spam.length : 0
   };
   
   const handleFolderSelect = (folder: FolderType) => {
+    // Clear selected email when changing folders
+    setSelectedEmail(null);
+    
+    // Navigate to the selected folder
     router.push(`/dashboard/email/${folder}`);
   };
   
@@ -77,11 +92,13 @@ const EmailSidebarContent = () => {
               />
               <span className="font-medium">Inbox</span>
             </div>
-            {unreadCounts.inbox > 0 && (
-              <span className="inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 text-xs font-medium rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400">
-                {unreadCounts.inbox}
-              </span>
-            )}
+            <span className={`inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 text-xs font-medium rounded-full ${
+              unreadCounts.inbox > 0 
+                ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400' 
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+            }`}>
+              {unreadCounts.inbox}
+            </span>
           </button>
           
           <button
@@ -101,6 +118,9 @@ const EmailSidebarContent = () => {
               />
               <span className="font-medium">Sent</span>
             </div>
+            <span className="inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 text-xs font-medium rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+              {totalCounts.sent}
+            </span>
           </button>
           
           <button
@@ -120,11 +140,13 @@ const EmailSidebarContent = () => {
               />
               <span className="font-medium">Drafts</span>
             </div>
-            {unreadCounts.draft > 0 && (
-              <span className="inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 text-xs font-medium rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
-                {unreadCounts.draft}
-              </span>
-            )}
+            <span className={`inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 text-xs font-medium rounded-full ${
+              totalCounts.draft > 0 
+                ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400' 
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+            }`}>
+              {totalCounts.draft}
+            </span>
           </button>
           
           <button
@@ -144,6 +166,13 @@ const EmailSidebarContent = () => {
               />
               <span className="font-medium">Trash</span>
             </div>
+            <span className={`inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 text-xs font-medium rounded-full ${
+              unreadCounts.trash > 0 
+                ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' 
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+            }`}>
+              {unreadCounts.trash}
+            </span>
           </button>
           
           {/* Spam Folder */}
@@ -164,11 +193,13 @@ const EmailSidebarContent = () => {
               />
               <span className="font-medium">Spam</span>
             </div>
-            {unreadCounts.spam > 0 && (
-              <span className="inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 text-xs font-medium rounded-full bg-yellow-100 dark:bg-yellow-900 text-yellow-600 dark:text-yellow-400">
-                {unreadCounts.spam}
-              </span>
-            )}
+            <span className={`inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 text-xs font-medium rounded-full ${
+              unreadCounts.spam > 0 
+                ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-600 dark:text-yellow-400' 
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+            }`}>
+              {unreadCounts.spam}
+            </span>
           </button>
         </nav>
       </div>

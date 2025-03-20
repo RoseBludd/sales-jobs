@@ -63,7 +63,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { 
       folder, 
-      pageSize = 50, 
+      pageSize = 1000, 
       offset = 0, 
       forceFull = false,
       background = false 

@@ -139,9 +139,13 @@ export async function getEmails(
     // Initialize the Exchange service
     const service = await initEWSService();
 
-    // Set up the view to retrieve emails
+    // Set up the view to retrieve emails with basic properties only
     const view = new ItemView(pageSize, offset);
-    view.PropertySet = new PropertySet(BasePropertySet.FirstClassProperties);
+    
+    // Use the default FirstClassProperties but don't add any additional properties
+    // that aren't supported in FindItem (like Body or MimeContent)
+    const propertySet = new PropertySet(BasePropertySet.FirstClassProperties);
+    view.PropertySet = propertySet;
     
     // Convert WorkMail folder name to Exchange folder name
     const exchangeFolderName = mapWorkMailToExchangeFolder(folderName);
@@ -151,16 +155,54 @@ export async function getEmails(
     // and filter them on the client side if lastSyncTime is provided
     const results = await service.FindItems(exchangeFolderName, view);
     
-    // Process and filter the emails
-    const emails = results.Items.map((email: any) => ({
-      id: email.Id.UniqueId,
-      subject: email.Subject || '(No Subject)',
-      from: email.From?.Address || '',
-      fromName: email.From?.Name || '',
-      receivedDate: email.DateTimeReceived ? email.DateTimeReceived.ToISOString() : null,
-      hasAttachments: email.HasAttachments || false,
-      isRead: email.IsRead || false
-    }));
+    // Process and extract basic data from the emails
+    const emails = results.Items.map((email: any) => {
+      // Extract basic properties
+      const basicEmail: {
+        id: string;
+        subject: string;
+        from: string;
+        fromName: string;
+        receivedDate: string | null;
+        hasAttachments: boolean;
+        isRead: boolean;
+        body: null;
+        to: string[];
+        cc: string[];
+      } = {
+        id: email.Id.UniqueId,
+        subject: email.Subject || '(No Subject)',
+        from: email.From?.Address || '',
+        fromName: email.From?.Name || '',
+        receivedDate: email.DateTimeReceived ? email.DateTimeReceived.ToISOString() : null,
+        hasAttachments: email.HasAttachments || false,
+        isRead: email.IsRead || false,
+        body: null, // We'll fetch the body separately when needed
+        to: [],
+        cc: []
+      };
+      
+      // Try to extract recipients if available
+      if (email.ToRecipients) {
+        basicEmail.to = Array.from(email.ToRecipients as any).map((r: any) => r.Address);
+      }
+      
+      if (email.CcRecipients) {
+        basicEmail.cc = Array.from(email.CcRecipients as any).map((r: any) => r.Address);
+      }
+      
+      return basicEmail;
+    });
+    
+    // Log sender information for debugging
+    emails.forEach(email => {
+      console.log(`EWS getEmails: Email ${email.id}, from: ${email.fromName} <${email.from}>`);
+      
+      // If sender information is missing, log a warning
+      if (!email.from && !email.fromName) {
+        console.warn(`EWS getEmails: Missing sender information for email ${email.id}, subject: ${email.subject}`);
+      }
+    });
     
     // If lastSyncTime is provided, filter out older emails
     if (lastSyncTime) {
@@ -176,7 +218,7 @@ export async function getEmails(
     return emails;
   } catch (error) {
     console.error('Error fetching emails:', error);
-    return [];
+    throw error; // Rethrow to handle it in the calling function
   }
 }
 
@@ -188,6 +230,9 @@ export const getEmailById = async (emailId: string): Promise<any> => {
     // Create a more detailed property set to ensure we get all available properties
     const propertySet = new PropertySet(BasePropertySet.FirstClassProperties);
     propertySet.RequestedBodyType = BodyType.HTML;
+    
+    // Explicitly add MimeContent to the property set
+    propertySet.Add(ItemSchema.MimeContent);
     
     // Convert string ID to ItemId
     const itemId = createItemIdFromString(emailId);
@@ -217,6 +262,61 @@ export const getEmailById = async (emailId: string): Promise<any> => {
       fromName = email.Sender.Name || '';
     }
     
+    // Try to extract additional information from MIME content if available
+    if (email.MimeContent) {
+      try {
+        const mimeContent = email.MimeContent.ToString();
+        console.log(`EWS: Extracting sender from MIME content, length: ${mimeContent.length}`);
+        
+        // Look for From header in MIME content
+        const fromMatch = mimeContent.match(/^From:\s*([^\r\n]+)/im);
+        if (fromMatch && fromMatch[1]) {
+          const fromHeader = fromMatch[1].trim();
+          console.log(`EWS: Found From header: ${fromHeader}`);
+          
+          // Parse email address and name from the From header
+          if (fromHeader.includes('<') && fromHeader.includes('>')) {
+            // Format: "Name <email@example.com>"
+            fromName = fromHeader.split('<')[0].trim() || fromName;
+            fromAddress = fromHeader.match(/<([^>]+)>/)?.[1]?.trim() || fromAddress;
+          } else {
+            // Format: "email@example.com"
+            fromAddress = fromHeader.trim() || fromAddress;
+          }
+          
+          console.log(`EWS: Extracted from MIME - Name: "${fromName}", Address: "${fromAddress}"`);
+        }
+        
+        // If still no sender, try Return-Path
+        if (!fromAddress) {
+          const returnPathMatch = mimeContent.match(/Return-Path:\s*<([^>]+)>/i);
+          if (returnPathMatch && returnPathMatch[1]) {
+            fromAddress = returnPathMatch[1].trim();
+            if (!fromName) {
+              fromName = fromAddress.split('@')[0] || '';
+            }
+            console.log(`EWS: Found Return-Path: ${fromAddress}`);
+          }
+        }
+        
+        // If still no sender, try any email pattern
+        if (!fromAddress) {
+          const emailMatch = mimeContent.match(/[\w\.-]+@[\w\.-]+\.\w+/);
+          if (emailMatch) {
+            fromAddress = emailMatch[0];
+            if (!fromName) {
+              fromName = fromAddress.split('@')[0] || '';
+            }
+            console.log(`EWS: Found email pattern: ${fromAddress}`);
+          }
+        }
+      } catch (mimeError) {
+        console.error('Error extracting from MIME content:', mimeError);
+      }
+    } else {
+      console.log('EWS: MimeContent property not available for this email');
+    }
+    
     // If still no sender info, try to extract from subject or other properties
     if (!fromAddress && !fromName) {
       // Try to extract from subject if possible
@@ -231,25 +331,6 @@ export const getEmailById = async (emailId: string): Promise<any> => {
         // Use default placeholder
         fromAddress = 'no-sender@weroofamerica.com';
         fromName = 'AWS WorkMail';
-      }
-    }
-    
-    // Try to extract additional information from MIME content if available
-    if ((!fromAddress || !fromName) && email.MimeContent) {
-      try {
-        const mimeContent = email.MimeContent.ToString();
-        // Look for From header in MIME content
-        const fromMatch = mimeContent.match(/From:\s*([^<]+)?<?([^>]+)?>?/i);
-        if (fromMatch) {
-          if (fromMatch[2] && !fromAddress) {
-            fromAddress = fromMatch[2].trim();
-          }
-          if (fromMatch[1] && !fromName) {
-            fromName = fromMatch[1].trim();
-          }
-        }
-      } catch (mimeError) {
-        console.error('Error extracting from MIME content:', mimeError);
       }
     }
     
@@ -303,13 +384,32 @@ export const getEmailById = async (emailId: string): Promise<any> => {
       size: email.Size
     };
     
-    console.log(`EWS: Successfully retrieved email ${emailId}, subject: ${result.subject}, body length: ${result.body ? result.body.length : 0}`);
+    console.log(`EWS: Successfully retrieved email ${emailId}, subject: ${result.subject}, from: ${result.fromName} <${result.from}>, body length: ${result.body ? result.body.length : 0}`);
     
     return result;
   } catch (error) {
     logEWSError(error as Error);
     console.error(`EWS: Failed to fetch email details for ID ${emailId}:`, error);
-    throw new EWSError('Failed to fetch email details', error);
+    
+    // Create a basic result with available information
+    const fallbackResult = {
+      id: emailId,
+      subject: '(Unable to retrieve subject)',
+      from: 'unknown@weroofamerica.com',
+      fromName: 'Unknown Sender',
+      to: [],
+      cc: [],
+      body: '',
+      receivedDate: new Date().toISOString(),
+      hasAttachments: false,
+      isRead: false,
+      importance: 'Normal',
+      internetMessageId: '',
+      size: 0
+    };
+    
+    console.log(`EWS: Returning fallback email data for ${emailId}`);
+    return fallbackResult;
   }
 };
 
